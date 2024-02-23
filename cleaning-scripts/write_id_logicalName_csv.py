@@ -1,6 +1,8 @@
 import csv
 import os
 
+# Use this script to associate logical names to jobIDs
+
 def process_csv_file(csv_file, IdsToLogical):
     with open(csv_file, 'r') as file:
         reader = csv.reader(file)

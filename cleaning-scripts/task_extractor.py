@@ -1,6 +1,8 @@
 import os
 import gzip
 
+# Run this script to extract the compressed tasks
+
 output_folder = 'task_events_extracted'
 os.makedirs(output_folder, exist_ok=True)
 

@@ -2,6 +2,8 @@ import csv
 import os
 import pandas as pd
 
+# Run this script to create csv files in the format (task_arrival, id, task_size)
+
 def process_csv_file(csv_file, task_sizes, task_status, starting_times, task_arrivals):
     with open(csv_file, 'r') as file:
         reader = csv.reader(file)
@@ -33,36 +35,36 @@ sizes = {}
 statuses = {}
 starts = {}
 arrivals = {}
-
+logical_names = {}
+output_folder = 'tasks-csv-output/'
+processed_files = -1
 i = 0
-parts_number = 10
 for filename in os.listdir(directory):
-    i += 1
-    if i > parts_number:
-        break
     if filename.endswith('.csv'):
         file_path = os.path.join(directory, filename)
         process_csv_file(file_path, sizes, statuses, starts, arrivals)
+        processed_files += 1
 
-logical_names = {}
-output_file = 'tasks_information.csv'
+    if processed_files >= 20:
+        output_file = output_folder + "task_information_" + str(i) + ".csv"
+        i += 1
+        with open(output_file, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            for k, v in sorted(sizes.items(), key=lambda x:int(arrivals[x[0][0],x[0][1]])):
+                jobID = int(k[0])
+                logical_name = str(logical_names_df.loc[logical_names_df.iloc[:, 0] == jobID, logical_names_df.columns[1]].values)
 
-with open(output_file, 'w', newline='') as csvfile:
-    writer = csv.writer(csvfile)
-    for k, v in sorted(sizes.items(), key=lambda x:int(arrivals[x[0][0],x[0][1]])):
-        jobID = int(k[0])
-        logical_name = str(logical_names_df.loc[logical_names_df.iloc[:, 0] == jobID, logical_names_df.columns[1]].values)
+                if logical_name in logical_names:
+                    lg = logical_names[logical_name]
+                else:
+                    logical_names[logical_name] = len(logical_names)
+                    lg = logical_names[logical_name]
 
-        if logical_name in logical_names:
-            lg = logical_names[logical_name]
-        else:
-            logical_names[logical_name] = len(logical_names)
-            lg = logical_names[logical_name]
-
-        if len(logical_name) > 0:
-            logical_name = logical_name[0]
-            # print(f"jobID: {jobID}, logicalName: {logical_name}, taskID: {k[1]}, starting_time: {v[1]}, size: {v[0]}")
-            writer.writerow([arrivals[(k[0], k[1])], lg, v[0]])
-        else:
-            print(f"No matching jobID for {jobID} found in the DataFrame.")
+                if len(logical_name) > 0:
+                    logical_name = logical_name[0]
+                    writer.writerow([arrivals[(k[0], k[1])], lg, v[0]])
+                    del sizes[(k[0], k[1])]
+                else:
+                    print(f"No matching jobID for {jobID} found in the DataFrame.")
+        processed_files = 0
 
