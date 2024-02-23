@@ -15,37 +15,31 @@ class Job:
         return self.remaining_duration < other.remaining_duration
 
 
-class RRscheduler:
+class RR_scheduler:
     def __init__(self):
         self.queue = []
         self.total_completion_time = 0
-        self.quantum = 100
+        self.quantum = 1
 
     def add_job(self, job):
         self.queue.append(job)
 
     def run(self):
         current_time = 0
-        flag = True
+        completed_jobs = []
         while self.queue:
-            if not flag:
-                break
-            flag = False
-            for job_i in range(len(self.queue)):
-                if self.queue[job_i].id == -1:
-                    continue
-                flag = True
-                # print(f"Processing {self.queue[job_i]} at time {current_time}")
-                if self.quantum >= self.queue[job_i].remaining_duration:
-                    current_time += min(self.quantum, self.queue[job_i].remaining_duration)
+            # Run the scheduler in round robin fashion
+            job_ind = 0
+            queue_size = len(self.queue)
+            while job_ind < queue_size:
+                if self.quantum >= self.queue[job_ind].remaining_duration:
+                    current_time += (self.queue.pop(job_ind)).remaining_duration
                     self.total_completion_time += current_time
-                    self.queue[job_i].id = -1
+                    queue_size -= 1
                 else:
                     current_time += self.quantum
-                    self.queue[job_i].remaining_duration -= self.quantum
-
-
-
+                    self.queue[job_ind].remaining_duration -= self.quantum
+                    job_ind += 1
 
     def display_jobs(self):
         print("Current Jobs in Queue:")
@@ -53,17 +47,13 @@ class RRscheduler:
             print(job)
 
 
-# Example usage:
-scheduler = RRscheduler()
+scheduler = RR_scheduler()
 
 # Adding jobs
 numjobs = 500
 for i in range(numjobs):
     a = [int(x) for x in input().split(",")]
     scheduler.add_job(Job(a[1], a[0]//10000, a[2]//10000))
-
-# Displaying initial jobs in the queue
-# scheduler.display_jobs()
 
 # Running the scheduler
 scheduler.run()

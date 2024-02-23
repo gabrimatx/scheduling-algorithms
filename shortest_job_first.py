@@ -15,7 +15,7 @@ class Job:
         return self.remaining_duration < other.remaining_duration
 
 
-class SPJFscheduler:
+class SJF_scheduler:
     def __init__(self):
         self.queue = []
         self.total_completion_time = 0
@@ -27,7 +27,6 @@ class SPJFscheduler:
         current_time = 0
         while self.queue:
             job = heapq.heappop(self.queue)
-            # print(f"Processing {job} at time {current_time}")
             current_time += job.remaining_duration
             self.total_completion_time += current_time
 
@@ -37,17 +36,13 @@ class SPJFscheduler:
             print(job)
 
 
-# Example usage:
-scheduler = SPJFscheduler()
+scheduler = SJF_scheduler()
 
 # Adding jobs
 numjobs = 500
 for i in range(numjobs):
     a = [int(x) for x in input().split(",")]
     scheduler.add_job(Job(a[1], a[0]//10000, a[2]//10000))
-
-# Displaying initial jobs in the queue
-# scheduler.display_jobs()
 
 # Running the scheduler
 scheduler.run()
