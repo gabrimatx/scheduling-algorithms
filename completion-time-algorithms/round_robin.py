@@ -1,25 +1,11 @@
 import heapq
-
-class Job:
-    def __init__(self, id, arrival_time, predicted_duration):
-        self.id = id
-        self.arrival_time = arrival_time
-        self.predicted_duration = predicted_duration
-        self.remaining_duration = predicted_duration
-        
-    def __repr__(self):
-        return f"Job {self.id} ({self.remaining_duration} units remaining)"
-
-    def __lt__(self, other):
-        # Comparison based on predicted duration
-        return self.remaining_duration < other.remaining_duration
-
+from job_class import Job
 
 class RR_scheduler:
-    def __init__(self):
+    def __init__(self, time_quantumq):
         self.queue = []
         self.total_completion_time = 0
-        self.quantum = 1
+        self.quantum = time_quantum
 
     def add_job(self, job):
         self.queue.append(job)
@@ -47,14 +33,18 @@ class RR_scheduler:
             print(job)
 
 
-scheduler = RR_scheduler()
+time_quantum = int(input("Insert time quantum for round robin: "))
 
-# Adding jobs
-numjobs = 500
-for i in range(numjobs):
-    a = [int(x) for x in input().split(",")]
-    scheduler.add_job(Job(a[1], a[0]//10000, a[2]//10000))
+if __name__ == '__main__':
+    scheduler = RR_scheduler(time_quantum)
 
-# Running the scheduler
-scheduler.run()
-print(f"total_completion_time: {scheduler.total_completion_time}")
+    # Adding jobs
+    numjobs = int(input("Insert number of jobs to process: "))
+    filename = r"task_lines.txt"
+    with open(filename, "r") as f:
+        for i in range(numjobs):
+            a = [int(x) for x in f.readline().split(",")]
+            scheduler.add_job(Job(a[1], a[0]//1000, a[2]//1000))
+    # Running the scheduler
+    scheduler.run()
+    print(f"total_completion_time: {scheduler.total_completion_time}")
