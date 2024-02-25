@@ -5,13 +5,20 @@ class SPJF_scheduler:
     def __init__(self):
         self.queue = []
         self.total_completion_time = 0
+        self.total_error = 0
 
     def add_job(self, job):
         self.queue.append(job)
 
+    def sort_and_add_error(self, job):
+        prediction = oracle.getJobPrediction(job)
+        self.total_error += abs(job.predicted_duration - prediction)
+        return prediction
+
     def run(self):
         current_time = 0
-        self.queue.sort(key = lambda j: oracle.getJobPrediction(j))
+        oracle.computePredictions(self.queue)
+        self.queue.sort(key = lambda j: self.sort_and_add_error(j))
         while self.queue:
             job = self.queue[0]
             self.queue = self.queue[1:]
@@ -26,9 +33,7 @@ class SPJF_scheduler:
 if __name__ == '__main__':
 	scheduler = SPJF_scheduler()
 	numjobs = int(input("Insert number of jobs to process: "))
-	mean = int(input("Insert mean of oracle: "))
-	stdd = int(input("Insert standard deviation of oracle: "))
-	oracle = GaussianPerturbationOracle(mean, stdd)
+	oracle = JobMeanOracle()
 	filename = r"task_lines.txt"
 	with open(filename, "r") as f:
 	    for i in range(numjobs):
@@ -36,7 +41,7 @@ if __name__ == '__main__':
 	        scheduler.add_job(Job(a[1], a[0]//1000, a[2]//1000))
 	# Running the scheduler
 	scheduler.run()
-	print(f"total_completion_time: {scheduler.total_completion_time}")
+	print(f"total_completion_time: {scheduler.total_completion_time} competitive_ratio: {(2 * scheduler.total_error / numjobs) + 1}")
 
 
 
