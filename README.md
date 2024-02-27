@@ -1,5 +1,5 @@
 # Scheduling algorithms
-Implementation of different scheduling algorithms for the problem of completion time and flowtime. Cleaning scripts for the google cluster are included.  
+Implementation of different scheduling algorithms for the problem of completion time and flowtime. Cleaning scripts for the [google cluster](https://github.com/google/cluster-data) are included.  
 # References
 <div class="csl-bib-body" style="line-height: 1.35; ">
   <div class="csl-entry" style="clear: left; ">
