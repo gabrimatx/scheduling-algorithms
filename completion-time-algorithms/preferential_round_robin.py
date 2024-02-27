@@ -15,12 +15,12 @@ class PRR_scheduler:
 
     def sort_and_add_error(self, job):
         prediction = oracle.getJobPrediction(job)
-        self.total_error += abs(job.predicted_duration - prediction)
+        self.total_error += abs(job.real_duration - prediction)
         return prediction
 
     def run(self):
         current_time = 0
-        oracle.computePredictions(self.queue)
+        oracle.computePredictions(self.queue[50:])
         self.queue.sort(key = lambda j: self.sort_and_add_error(j))
         while self.queue:
             time_for_rr = self.round_time * self.hyperLambda
@@ -42,8 +42,8 @@ class PRR_scheduler:
             while time_for_rr and self.queue:
                 rr_index = rr_index % len(self.queue)
                 if self.queue[rr_index].remaining_duration <= min(time_for_rr, self.quantum):
-                    current_time += self.queue[0].remaining_duration
-                    time_for_rr -= self.queue[0].remaining_duration
+                    current_time += self.queue[rr_index].remaining_duration
+                    time_for_rr -= self.queue[rr_index].remaining_duration
                     self.queue.pop(rr_index)
                     self.total_completion_time += current_time
                 else:

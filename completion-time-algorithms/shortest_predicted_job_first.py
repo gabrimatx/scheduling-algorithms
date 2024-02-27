@@ -12,12 +12,12 @@ class SPJF_scheduler:
 
     def sort_and_add_error(self, job):
         prediction = oracle.getJobPrediction(job)
-        self.total_error += abs(job.predicted_duration - prediction)
+        self.total_error += abs(job.real_duration - prediction)
         return prediction
 
     def run(self):
         current_time = 0
-        oracle.computePredictions(self.queue)
+        oracle.computePredictions(self.queue[50:])
         self.queue.sort(key = lambda j: self.sort_and_add_error(j))
         while self.queue:
             job = self.queue[0]
