@@ -1,5 +1,6 @@
 from oracles import *
 from job_class import Job
+from scientific_not import sci_notation
 
 class SPJF_scheduler:
     def __init__(self):
@@ -17,7 +18,8 @@ class SPJF_scheduler:
 
     def run(self):
         current_time = 0
-        oracle.computePredictions(self.queue[:100])
+        oracle.computePredictions(self.queue[:(len(self.queue) // 100 * 80)])
+        self.queue = self.queue[(len(self.queue) // 100 * 80):]
         self.queue.sort(key = lambda j: self.sort_and_add_error(j))
         while self.queue:
             job = self.queue[0]
@@ -41,7 +43,7 @@ if __name__ == '__main__':
 	        scheduler.add_job(Job(a[1], a[0]//1000, a[2]//1000))
 	# Running the scheduler
 	scheduler.run()
-	print(f"total_completion_time: {scheduler.total_completion_time} competitive_ratio: {(2 * scheduler.total_error / numjobs) + 1}")
+	print(f"total_completion_time: {sci_notation(scheduler.total_completion_time)} competitive_ratio: {(2 * scheduler.total_error / numjobs) + 1}")
 
 
 

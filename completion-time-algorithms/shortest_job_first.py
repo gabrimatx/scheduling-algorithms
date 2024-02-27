@@ -1,5 +1,5 @@
-import heapq
 from job_class import Job
+from scientific_not import sci_notation
 
 class SJF_scheduler:
     def __init__(self):
@@ -7,12 +7,12 @@ class SJF_scheduler:
         self.total_completion_time = 0
 
     def add_job(self, job):
-        heapq.heappush(self.queue, job)
+        self.queue.append(job)
 
     def run(self):
         current_time = 0
-        while self.queue:
-            job = heapq.heappop(self.queue)
+        self.queue = sorted(self.queue[(len(self.queue) // 100 * 80):])
+        for job in self.queue:
             current_time += job.remaining_duration
             self.total_completion_time += current_time
 
@@ -34,4 +34,4 @@ if __name__ == '__main__':
 
     # Running the scheduler
     scheduler.run()
-    print(f"total_completion_time: {scheduler.total_completion_time}")
+    print(f"total_completion_time: {sci_notation(scheduler.total_completion_time)}")

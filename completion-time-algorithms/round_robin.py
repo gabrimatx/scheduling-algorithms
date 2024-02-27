@@ -1,5 +1,6 @@
 import heapq
 from job_class import Job
+from scientific_not import sci_notation
 
 class RR_scheduler:
     def __init__(self, time_quantumq):
@@ -47,4 +48,4 @@ if __name__ == '__main__':
             scheduler.add_job(Job(a[1], a[0]//1000, a[2]//1000))
     # Running the scheduler
     scheduler.run()
-    print(f"total_completion_time: {scheduler.total_completion_time}")
+    print(f"total_completion_time: {sci_notation(scheduler.total_completion_time)}")

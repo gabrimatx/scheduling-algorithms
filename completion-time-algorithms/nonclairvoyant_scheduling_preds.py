@@ -3,6 +3,7 @@ from job_class import Job
 import random
 import copy
 import math
+from scientific_not import sci_notation
 
 class NCS_scheduler:
     def __init__(self):
@@ -11,7 +12,7 @@ class NCS_scheduler:
         self.k = 1
         self.delta = 1/50
         self.epsilon = 10
-        self.quantum = 5
+        self.quantum = 10000
         self.n = 0
         self.current_time = 0
 
@@ -25,7 +26,6 @@ class NCS_scheduler:
 
     def median_estimator(self):
         # Generate sample S 
-        print("estimating median")
         S = random.choices([i for i in range(len(self.queue))], k = math.ceil(math.log(2 * self.n) / (self.delta**2)))
         jobs_to_finish = len(S) // 2 
         last_job = -1
@@ -55,6 +55,8 @@ class NCS_scheduler:
             for second_job_index in range(job_index):
                 Q += [(copy.copy(self.queue[second_job_index]), copy.copy(self.queue[job_index]))]
 
+        if not Q:
+            return 0
         P = copy.deepcopy(random.choices(Q, k = math.ceil((1 / (self.epsilon ** 2)) * math.log10(self.n))))
         sum_of_estimations = 0
         median_time_running = (1 + self.epsilon) * estimated_median_k
@@ -67,7 +69,8 @@ class NCS_scheduler:
 
     def run(self):
         self.n = len(self.queue)
-        oracle.computePredictions(self.queue[:100])
+        oracle.computePredictions(self.queue[:(len(self.queue) // 100 * 80)])
+        self.queue = self.queue[(len(self.queue) // 100 * 80):]
         self.queue.sort(key = lambda j: self.oracle_predict(j))
         while len(self.queue) > math.ceil(1 / (self.epsilon**3) * math.log10(self.n)):
             round_median = self.median_estimator()
@@ -132,4 +135,4 @@ if __name__ == '__main__':
             scheduler.add_job(Job(a[1], a[0]//1000, a[2]//1000))
     # Running the scheduler
     scheduler.run()
-    print(f"total_completion_time: {scheduler.total_completion_time}")
+    print(f"total_completion_time: {sci_notation(scheduler.total_completion_time)}")

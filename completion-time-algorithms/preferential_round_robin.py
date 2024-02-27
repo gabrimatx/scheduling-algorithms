@@ -1,12 +1,13 @@
 from oracles import *
 from job_class import Job
+from scientific_not import sci_notation
 
 class PRR_scheduler:
     def __init__(self, lamb):
         self.queue = []
         self.total_completion_time = 0
         self.round_time = 100
-        self.quantum = 5
+        self.quantum = 10000
         self.hyperLambda = lamb
         self.total_error = 0
 
@@ -20,7 +21,8 @@ class PRR_scheduler:
 
     def run(self):
         current_time = 0
-        oracle.computePredictions(self.queue[50:])
+        oracle.computePredictions(self.queue[:(len(self.queue) // 100 * 80)])
+        self.queue = self.queue[(len(self.queue) // 100 * 80):]
         self.queue.sort(key = lambda j: self.sort_and_add_error(j))
         while self.queue:
             time_for_rr = self.round_time * self.hyperLambda
@@ -71,4 +73,4 @@ if __name__ == '__main__':
             scheduler.add_job(Job(a[1], a[0]//1000, a[2]//1000))
     # Running the scheduler
     scheduler.run()
-    print(f"total_completion_time: {scheduler.total_completion_time} competitive_ratio: {min(((2 * scheduler.total_error / numjobs) + 1) / (1 - l), 2.0 / l)}")
+    print(f"total_completion_time: {sci_notation(scheduler.total_completion_time)} competitive_ratio: {min(((2 * scheduler.total_error / numjobs) + 1) / (1 - l), 2.0 / l)}")
