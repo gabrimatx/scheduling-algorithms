@@ -18,8 +18,8 @@ class SPJF_scheduler:
 
     def run(self):
         current_time = 0
-        oracle.computePredictions(self.queue[:(len(self.queue) // 100 * 80)])
-        self.queue = self.queue[(len(self.queue) // 100 * 80):]
+        oracle.computePredictions(self.queue[:(len(self.queue) // 100 * 20)])
+        self.queue = self.queue[(len(self.queue) // 100 * 20):]
         self.queue.sort(key = lambda j: self.sort_and_add_error(j))
         while self.queue:
             job = self.queue[0]

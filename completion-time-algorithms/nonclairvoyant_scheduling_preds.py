@@ -69,8 +69,8 @@ class NCS_scheduler:
 
     def run(self):
         self.n = len(self.queue)
-        oracle.computePredictions(self.queue[:(len(self.queue) // 100 * 80)])
-        self.queue = self.queue[(len(self.queue) // 100 * 80):]
+        oracle.computePredictions(self.queue[:(len(self.queue) // 100 * 20)])
+        self.queue = self.queue[(len(self.queue) // 100 * 20):]
         self.queue.sort(key = lambda j: self.oracle_predict(j))
         while len(self.queue) > math.ceil(1 / (self.epsilon**3) * math.log10(self.n)):
             round_median = self.median_estimator()

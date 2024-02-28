@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 classes = []
-num_of_jobs = 3000000
+num_of_jobs = 5 * (10 ** 6)
 for i in range(num_of_jobs):
-    single_size = tuple(int(x) for x in input().split(','))[1]
-    classes.append(single_size)
+    single_class = tuple(int(x) for x in input().split(','))[1]
+    classes.append(single_class)
 
 
 classes_array = np.array(classes)

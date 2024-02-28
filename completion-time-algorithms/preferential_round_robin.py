@@ -7,7 +7,7 @@ class PRR_scheduler:
         self.queue = []
         self.total_completion_time = 0
         self.round_time = 100
-        self.quantum = 10000
+        self.quantum = 100000
         self.hyperLambda = lamb
         self.total_error = 0
 
@@ -21,8 +21,8 @@ class PRR_scheduler:
 
     def run(self):
         current_time = 0
-        oracle.computePredictions(self.queue[:(len(self.queue) // 100 * 80)])
-        self.queue = self.queue[(len(self.queue) // 100 * 80):]
+        oracle.computePredictions(self.queue[:(len(self.queue) // 100 * 20)])
+        self.queue = self.queue[(len(self.queue) // 100 * 20):]
         self.queue.sort(key = lambda j: self.sort_and_add_error(j))
         while self.queue:
             time_for_rr = self.round_time * self.hyperLambda

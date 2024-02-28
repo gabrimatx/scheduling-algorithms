@@ -1,4 +1,3 @@
-import heapq
 from job_class import Job
 from scientific_not import sci_notation
 
@@ -13,7 +12,7 @@ class RR_scheduler:
 
     def run(self):
         current_time = 0
-        completed_jobs = []
+        self.queue = sorted(self.queue[(len(self.queue) // 100 * 20):])
         while self.queue:
             # Run the scheduler in round robin fashion
             job_ind = 0

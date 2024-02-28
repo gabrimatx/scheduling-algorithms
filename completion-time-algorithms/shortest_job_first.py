@@ -11,7 +11,7 @@ class SJF_scheduler:
 
     def run(self):
         current_time = 0
-        self.queue = sorted(self.queue[(len(self.queue) // 100 * 80):])
+        self.queue = sorted(self.queue[(len(self.queue) // 100 * 20):])
         for job in self.queue:
             current_time += job.remaining_duration
             self.total_completion_time += current_time

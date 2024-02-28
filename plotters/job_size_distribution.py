@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 
 sizes = []
-num_of_jobs = 3 * (10 ** 6)
+num_of_jobs = 5 * (10 ** 6)
 for i in range(num_of_jobs):
 	single_size = tuple(int(x) for x in input().split(','))[2] // 10000
 	sizes.append(single_size)
