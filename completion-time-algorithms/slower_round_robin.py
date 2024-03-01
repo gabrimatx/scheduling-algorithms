@@ -15,35 +15,23 @@ class RR_scheduler:
         start = time.time()
         current_time = 0
         self.queue = self.queue[(len(self.queue) // 100 * 20):]
-        ordered_jobs = sorted(self.queue)
-        min_index = 0
-        total_quantum_increases = 0
         rounds = 0
         while self.queue:
             # Run the scheduler in round robin fashion
             rounds += 1
             job_ind = 0
             queue_size = len(self.queue)
-            minimum_round_size = ordered_jobs[min_index].remaining_duration
-            if minimum_round_size > self.quantum:
-                round_quantum = (minimum_round_size // self.quantum) * self.quantum
-                total_quantum_increases += minimum_round_size // self.quantum
-            else:
-                round_quantum = self.quantum
-
             while job_ind < queue_size:
-                if round_quantum >= self.queue[job_ind].remaining_duration:
+                if self.quantum >= self.queue[job_ind].remaining_duration:
                     current_time += (self.queue.pop(job_ind)).remaining_duration
                     self.total_completion_time += current_time
-                    min_index += 1
                     queue_size -= 1
                 else:
-                    current_time += round_quantum
-                    self.queue[job_ind].remaining_duration -= round_quantum
+                    current_time += self.quantum
+                    self.queue[job_ind].remaining_duration -= self.quantum
                     job_ind += 1
-
         end = time.time()
-        print(f"Time used {end - start} Increases {total_quantum_increases} Rounds: {rounds}")
+        print(f"Time used {end - start} Rounds {rounds}")
 
     def display_jobs(self):
         print("Current Jobs in Queue:")
