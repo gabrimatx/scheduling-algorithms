@@ -2,7 +2,7 @@ from job_class import Job
 from scientific_not import sci_notation
 
 class RR_scheduler:
-    def __init__(self, time_quantumq):
+    def __init__(self, time_quantum):
         self.queue = []
         self.total_completion_time = 0
         self.quantum = time_quantum
@@ -12,19 +12,28 @@ class RR_scheduler:
 
     def run(self):
         current_time = 0
-        self.queue = sorted(self.queue[(len(self.queue) // 100 * 20):])
+        self.queue = self.queue[(len(self.queue) // 100 * 20):]
+        ordered_jobs = sorted(self.queue)
+        min_index = 0
         while self.queue:
             # Run the scheduler in round robin fashion
             job_ind = 0
             queue_size = len(self.queue)
+            minimum_round_size = ordered_jobs[min_index].remaining_duration
+            if minimum_round_size > self.quantum:
+                round_quantum = (minimum_round_size // self.quantum) * self.quantum
+            else:
+                round_quantum = self.quantum
+
             while job_ind < queue_size:
-                if self.quantum >= self.queue[job_ind].remaining_duration:
+                if round_quantum >= self.queue[job_ind].remaining_duration:
                     current_time += (self.queue.pop(job_ind)).remaining_duration
                     self.total_completion_time += current_time
+                    min_index += 1
                     queue_size -= 1
                 else:
-                    current_time += self.quantum
-                    self.queue[job_ind].remaining_duration -= self.quantum
+                    current_time += round_quantum
+                    self.queue[job_ind].remaining_duration -= round_quantum
                     job_ind += 1
 
     def display_jobs(self):

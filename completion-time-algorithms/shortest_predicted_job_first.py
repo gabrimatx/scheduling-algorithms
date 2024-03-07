@@ -33,17 +33,17 @@ class SPJF_scheduler:
             print(job)
 
 if __name__ == '__main__':
-	scheduler = SPJF_scheduler()
-	numjobs = int(input("Insert number of jobs to process: "))
-	oracle = JobMeanOracle()
-	filename = r"task_lines.txt"
-	with open(filename, "r") as f:
-	    for i in range(numjobs):
-	        a = [int(x) for x in f.readline().split(",")]
-	        scheduler.add_job(Job(a[1], a[0]//1000, a[2]//1000))
-	# Running the scheduler
-	scheduler.run()
-	print(f"total_completion_time: {sci_notation(scheduler.total_completion_time)} competitive_ratio: {(2 * scheduler.total_error / numjobs) + 1}")
+    scheduler = SPJF_scheduler()
+    numjobs = int(input("Insert number of jobs to process: "))
+    oracle = JobMeanOracle()
+    filename = r"task_lines.txt"
+    with open(filename, "r") as f:
+        for i in range(numjobs):
+            a = [int(x) for x in f.readline().split(",")]
+            scheduler.add_job(Job(a[1], a[0]//1000, a[2]//1000))
+    # Running the scheduler
+    scheduler.run()
+    print(f"total_completion_time: {sci_notation(scheduler.total_completion_time)} competitive_ratio: {(2 * scheduler.total_error / numjobs) + 1}")
 
 
 

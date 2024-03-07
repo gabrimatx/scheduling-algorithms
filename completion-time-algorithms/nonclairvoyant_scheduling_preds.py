@@ -73,6 +73,7 @@ class NCS_scheduler:
         self.queue = self.queue[(len(self.queue) // 100 * 20):]
         self.queue.sort(key = lambda j: self.oracle_predict(j))
         while len(self.queue) > math.ceil(1 / (self.epsilon**3) * math.log10(self.n)):
+            print(len(self.queue))
             round_median = self.median_estimator()
             round_error = self.error_estimator(round_median)
             if round_error >= (self.delta**2 * self.epsilon * round_median * len(self.queue)**2) / 16:

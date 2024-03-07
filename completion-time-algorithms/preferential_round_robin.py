@@ -6,7 +6,7 @@ class PRR_scheduler:
     def __init__(self, lamb):
         self.queue = []
         self.total_completion_time = 0
-        self.round_time = 100
+        self.round_time = 10000000
         self.quantum = 100000
         self.hyperLambda = lamb
         self.total_error = 0
