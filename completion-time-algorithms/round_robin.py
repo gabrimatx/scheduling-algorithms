@@ -1,9 +1,8 @@
 from job_class import Job
 from scientific_not import sci_notation
-import time
 
 class RR_scheduler:
-    def __init__(self, time_quantumq):
+    def __init__(self, time_quantum):
         self.queue = []
         self.total_completion_time = 0
         self.quantum = time_quantum
@@ -12,22 +11,16 @@ class RR_scheduler:
         self.queue.append(job)
 
     def run(self):
-        start = time.time()
         current_time = 0
-        self.queue = self.queue[(len(self.queue) // 100 * 20):]
         ordered_jobs = sorted(self.queue)
         min_index = 0
-        total_quantum_increases = 0
-        rounds = 0
         while self.queue:
             # Run the scheduler in round robin fashion
-            rounds += 1
             job_ind = 0
             queue_size = len(self.queue)
             minimum_round_size = ordered_jobs[min_index].remaining_duration
             if minimum_round_size > self.quantum:
                 round_quantum = (minimum_round_size // self.quantum) * self.quantum
-                total_quantum_increases += minimum_round_size // self.quantum
             else:
                 round_quantum = self.quantum
 
@@ -42,8 +35,6 @@ class RR_scheduler:
                     self.queue[job_ind].remaining_duration -= round_quantum
                     job_ind += 1
 
-        end = time.time()
-        print(f"Time used {end - start} Increases {total_quantum_increases} Rounds: {rounds}")
 
     def display_jobs(self):
         print("Current Jobs in Queue:")
@@ -51,9 +42,10 @@ class RR_scheduler:
             print(job)
 
 
-time_quantum = int(input("Insert time quantum for round robin: "))
+
 
 if __name__ == '__main__':
+    time_quantum = int(input("Insert time quantum for round robin: "))
     scheduler = RR_scheduler(time_quantum)
 
     # Adding jobs

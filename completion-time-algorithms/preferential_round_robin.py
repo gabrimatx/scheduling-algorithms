@@ -3,11 +3,11 @@ from job_class import Job
 from scientific_not import sci_notation
 
 class PRR_scheduler:
-    def __init__(self, lamb):
+    def __init__(self, lamb, time_quantum):
         self.queue = []
         self.total_completion_time = 0
         self.round_time = 10000000
-        self.quantum = 100000
+        self.quantum = time_quantum
         self.hyperLambda = lamb
         self.total_error = 0
 
@@ -63,7 +63,7 @@ class PRR_scheduler:
 
 if __name__ == '__main__':
     l = float(input("Insert lambda hyperparameter: "))
-    scheduler = PRR_scheduler(l)
+    scheduler = PRR_scheduler(l, 10000)
     numjobs = int(input("Insert number of jobs to process: "))
     oracle = JobMeanOracle()
     filename = r"task_lines.txt"

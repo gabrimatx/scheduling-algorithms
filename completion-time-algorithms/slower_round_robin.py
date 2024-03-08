@@ -3,7 +3,7 @@ from scientific_not import sci_notation
 import time
 
 class RR_scheduler:
-    def __init__(self, time_quantumq):
+    def __init__(self, time_quantum):
         self.queue = []
         self.total_completion_time = 0
         self.quantum = time_quantum
@@ -12,13 +12,10 @@ class RR_scheduler:
         self.queue.append(job)
 
     def run(self):
-        start = time.time()
         current_time = 0
         self.queue = self.queue[(len(self.queue) // 100 * 20):]
-        rounds = 0
         while self.queue:
             # Run the scheduler in round robin fashion
-            rounds += 1
             job_ind = 0
             queue_size = len(self.queue)
             while job_ind < queue_size:
@@ -30,8 +27,6 @@ class RR_scheduler:
                     current_time += self.quantum
                     self.queue[job_ind].remaining_duration -= self.quantum
                     job_ind += 1
-        end = time.time()
-        print(f"Time used {end - start} Rounds {rounds}")
 
     def display_jobs(self):
         print("Current Jobs in Queue:")
