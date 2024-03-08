@@ -3,26 +3,26 @@ from job_class import Job
 from scientific_not import sci_notation
 
 class PRR_scheduler:
-    def __init__(self, lamb, time_quantum):
+    def __init__(self, lambda_parameter, time_quantum, oracle):
         self.queue = []
         self.total_completion_time = 0
-        self.round_time = 10000000
+        self.round_time = 100
         self.quantum = time_quantum
-        self.hyperLambda = lamb
+        self.hyperLambda = lambda_parameter
         self.total_error = 0
+        self.oracle = oracle
 
     def add_job(self, job):
         self.queue.append(job)
 
     def sort_and_add_error(self, job):
-        prediction = oracle.getJobPrediction(job)
+        prediction = self.oracle.getJobPrediction(job)
         self.total_error += abs(job.real_duration - prediction)
         return prediction
 
     def run(self):
         current_time = 0
-        oracle.computePredictions(self.queue[:(len(self.queue) // 100 * 20)])
-        self.queue = self.queue[(len(self.queue) // 100 * 20):]
+        self.oracle.computePredictions(self.queue)
         self.queue.sort(key = lambda j: self.sort_and_add_error(j))
         while self.queue:
             time_for_rr = self.round_time * self.hyperLambda
@@ -63,9 +63,8 @@ class PRR_scheduler:
 
 if __name__ == '__main__':
     l = float(input("Insert lambda hyperparameter: "))
-    scheduler = PRR_scheduler(l, 10000)
+    scheduler = PRR_scheduler(l, 10000, JobMeanOracle())
     numjobs = int(input("Insert number of jobs to process: "))
-    oracle = JobMeanOracle()
     filename = r"task_lines.txt"
     with open(filename, "r") as f:
         for i in range(numjobs):

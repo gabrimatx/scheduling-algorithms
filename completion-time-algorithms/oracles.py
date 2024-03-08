@@ -27,6 +27,9 @@ class GaussianPerturbationOracle:
 		self.mean = mean
 		self.std_dev = std_dev
 
+	def computePredictions(self, JobSet):
+		pass
+
 	def getJobPrediction(self, Job):
 		return Job.real_duration + np.random.normal(self.mean, self.std_dev, 1)[0]
 
