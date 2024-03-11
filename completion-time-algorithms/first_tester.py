@@ -82,8 +82,8 @@ def run_simulation(sample_size, alpha, num_runs, num_instances):
 # Parameters
 alpha = 1.1
 sample_size = 200
-num_runs = 10
-num_instances_to_average = 5
+num_runs = 2000
+num_instances_to_average = 10
 
 competitive_ratios = np.asarray(run_simulation(sample_size, alpha, num_runs, num_instances_to_average))
 competitive_ratios.dump("array_dump")
@@ -109,7 +109,7 @@ plt.show()
 num_runs = len(competitive_ratios[0])
 
 # Calculate moving average for each algorithm
-window_size = 5
+window_size = 10
 moving_avg_data = []
 for algo_data in competitive_ratios:
     moving_avg_data.append(moving_average(algo_data, window_size))
