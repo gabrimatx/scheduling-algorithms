@@ -21,7 +21,7 @@ class NCS_scheduler:
         self.queue.append(job)
 
     def oracle_predict(self, job):
-        prediction = self.oracle.getJobPrediction(job)
+        prediction = job.real_duration # TODO: Find how to fix this
         job.oracle_prediction = prediction
         return prediction
 
@@ -29,25 +29,30 @@ class NCS_scheduler:
         # Generate sample S 
         S = random.choices([i for i in range(len(self.queue))], k = math.ceil(math.log(2 * self.n) / (self.delta**2)))
         jobs_to_finish = len(S) // 2 
-        last_job = -1
-        while len(S) > jobs_to_finish:
+        completed_jobs = set()
+        completed_S_elements = set()
+        last_job_duration = 1
+        while len(completed_S_elements) < jobs_to_finish:
             job_ind = 0
             while job_ind < len(S):
+                if S[job_ind] in completed_jobs:
+                    completed_S_elements.add(job_ind)
+                    job_ind += 1
+                    continue
                 if self.quantum >= self.queue[S[job_ind]].remaining_duration:
-                    last_job = (self.queue.pop(S[job_ind])).remaining_duration
-                    # Remove all indexes of popped job
-                    removed_index = S.pop(job_ind)
-                    S = list(filter(lambda x: x != removed_index, S))
-                    for i in range(len(S)):
-                        if S[i] > removed_index:
-                            S[i] -= 1
-                    self.current_time += last_job
+                    last_job_duration = self.queue[S[job_ind]].remaining_duration
+                    self.current_time += last_job_duration
                     self.total_completion_time += self.current_time
+                    self.queue[S[job_ind]].remaining_duration = 0
+                    completed_jobs.add(S[job_ind])
+                    completed_S_elements.add(job_ind)
                 else:
                     self.queue[S[job_ind]].remaining_duration -= self.quantum
                     self.current_time += self.quantum
-                    job_ind += 1
-        return last_job
+                job_ind += 1
+        for finished_job in sorted(list(completed_jobs), reverse=True):
+            self.queue.pop(finished_job)
+        return last_job_duration
 
     def error_estimator(self, estimated_median_k):
         # Construct the Q family 
@@ -71,8 +76,8 @@ class NCS_scheduler:
     def run(self):
         self.n = len(self.queue)
         self.oracle.computePredictions(self.queue[:(len(self.queue) // 100 * 20)])
-        self.queue = self.queue[(len(self.queue) // 100 * 20):]
         self.queue.sort(key = lambda j: self.oracle_predict(j))
+        greedy_completed_moves = 0
         while len(self.queue) > math.ceil(1 / (self.epsilon**3) * math.log10(self.n)):
             round_median = self.median_estimator()
             round_error = self.error_estimator(round_median)
@@ -95,6 +100,9 @@ class NCS_scheduler:
                 while job_ind < len(self.queue):
                     remaining_time_estimate = self.queue[job_ind].oracle_prediction - (self.queue[job_ind].real_duration - self.queue[job_ind].remaining_duration)
                     if remaining_time_estimate <= (1 + self.epsilon) * round_median:
+                        greedy_completed_moves += 1
+                        if remaining_time_estimate + 3*self.epsilon*round_median < 0:
+                            print("AAAAAAAAAAAAAAAAAAAAAAAAA")
                         if self.queue[job_ind].remaining_duration <= remaining_time_estimate + 3*self.epsilon*round_median:
                             self.current_time += self.queue[job_ind].remaining_duration
                             self.queue.pop(job_ind)
@@ -121,6 +129,8 @@ class NCS_scheduler:
                     self.queue[job_ind].remaining_duration -= self.quantum
                     job_ind += 1
 
+        print(f"greedy completed jobs {greedy_completed_moves}")
+
     def display_jobs(self):
         print("Current Jobs in Queue:")
         for job in self.queue:
@@ -130,8 +140,8 @@ class NCS_scheduler:
 if __name__ == '__main__':
     
     numjobs = int(input("Insert number of jobs to process: "))
-    oracle = JobMeanOracle()
-    scheduler = NCS_scheduler(100, oracle, 1)
+    oracle = GaussianPerturbationOracle(0, 1000000)
+    scheduler = NCS_scheduler(100, oracle, 100)
     filename = r"task_lines.txt"
     with open(filename, "r") as f:
         for i in range(numjobs):

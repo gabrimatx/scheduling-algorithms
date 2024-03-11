@@ -54,10 +54,10 @@ def run_simulation(sample_size, alpha, num_runs, num_instances):
         for k, sample in enumerate(samples):
             print(f"Done round {_}.{k}")
 
-            gaussian_oracle = GaussianPerturbationOracle(0, _)
+            gaussian_oracle = GaussianPerturbationOracle(0, _ * 1000)
             spjfS = SPJF_scheduler(gaussian_oracle)
             prrS = PRR_scheduler(0.5, 1, gaussian_oracle)
-            ncsS = NCS_scheduler(10, gaussian_oracle, 1)
+            ncsS = NCS_scheduler(10, gaussian_oracle, 100)
 
             for index, job_size in enumerate(sample):
                 spjfS.add_job(Job(index, 0, job_size))
@@ -81,42 +81,25 @@ def run_simulation(sample_size, alpha, num_runs, num_instances):
 
 # Parameters
 alpha = 1.1
-sample_size = 200
-num_runs = 2000
-num_instances_to_average = 10
+sample_size = 100
+num_runs = 200
+num_instances_to_average = 5
+window_size = 10
 
+
+# Run simulation
 competitive_ratios = np.asarray(run_simulation(sample_size, alpha, num_runs, num_instances_to_average))
 competitive_ratios.dump("array_dump")
-"""
-plt.figure(figsize=(10, 6))
-x_axis = range(0, num_runs)
-plt.plot(x_axis, competitive_ratios[0], color='skyblue', label='Round Robin')
-plt.plot(x_axis, competitive_ratios[1], color='red', label='SPJF')
-plt.plot(x_axis, competitive_ratios[2], color='green', label='PRR')
-plt.xlim(0, 10000)
-
-plt.xlabel('$\sigma$')
-plt.ylabel('Average Empirical Competitive Ratio')
-plt.title('Competitive Ratio Over Multiple Runs, prediction error increases each time')
-plt.xticks(rotation=45)
-plt.grid(True)
-
-# Add legend
-plt.legend()
-plt.savefig('competitive_ratios_plot.png')
-plt.show()
-"""
 num_runs = len(competitive_ratios[0])
 
 # Calculate moving average for each algorithm
-window_size = 10
 moving_avg_data = []
 for algo_data in competitive_ratios:
     moving_avg_data.append(moving_average(algo_data, window_size))
 
-# Plot using seaborn
+# Plot using seaborn and matplotlib
 plt.figure(figsize=(10, 6))
-x_axis = range(0, num_runs - window_size + 1)
+x_axis = [i * 1000 for i in range(0, num_runs - window_size + 1)]
 names = ["Round Robin", "Shortest predicted job first", "Preferential round robin", "Non-clairvoyant scheduling"]
 for i, algo_data in enumerate(moving_avg_data):
     sns.lineplot(x=x_axis, y=algo_data, label=names[i])
