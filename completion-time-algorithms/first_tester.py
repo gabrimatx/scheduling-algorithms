@@ -14,7 +14,7 @@ def moving_average(data, window_size):
     return np.convolve(data, weights, 'valid')
 
 # Function to run the simulation and calculate empirical competitive ratio
-def run_simulation(sample_size, alpha, num_runs):
+def run_simulation(sample_size, alpha, num_runs, num_instances):
     rr_competitive_ratios = []
     SPJF_competitive_ratios = []
     prr_competitive_ratios = []
@@ -23,7 +23,7 @@ def run_simulation(sample_size, alpha, num_runs):
     # Generate pareto samples to run in each parameter setting
     samples = []
     np.random.seed(27)
-    for i in range(5):
+    for i in range(num_instances):
         pareto_samples = np.random.pareto(alpha, sample_size)
         min_value = min(pareto_samples)
         normalized_samples = pareto_samples * (1 / min_value)
@@ -57,7 +57,7 @@ def run_simulation(sample_size, alpha, num_runs):
             gaussian_oracle = GaussianPerturbationOracle(0, _)
             spjfS = SPJF_scheduler(gaussian_oracle)
             prrS = PRR_scheduler(0.5, 1, gaussian_oracle)
-            ncsS = NCS_scheduler(10, gaussian_oracle)
+            ncsS = NCS_scheduler(10, gaussian_oracle, 1)
 
             for index, job_size in enumerate(sample):
                 spjfS.add_job(Job(index, 0, job_size))
@@ -81,11 +81,12 @@ def run_simulation(sample_size, alpha, num_runs):
 
 # Parameters
 alpha = 1.1
-sample_size = 50
-num_runs = 5000
+sample_size = 200
+num_runs = 10
+num_instances_to_average = 5
 
-# Run simulation multiple times
-competitive_ratios = run_simulation(sample_size, alpha, num_runs)
+competitive_ratios = np.asarray(run_simulation(sample_size, alpha, num_runs, num_instances_to_average))
+competitive_ratios.dump("array_dump")
 """
 plt.figure(figsize=(10, 6))
 x_axis = range(0, num_runs)
@@ -108,7 +109,7 @@ plt.show()
 num_runs = len(competitive_ratios[0])
 
 # Calculate moving average for each algorithm
-window_size = 50
+window_size = 5
 moving_avg_data = []
 for algo_data in competitive_ratios:
     moving_avg_data.append(moving_average(algo_data, window_size))
@@ -127,5 +128,5 @@ plt.xticks(rotation=45)
 plt.ylim(0.5, 6)
 plt.grid(True)
 plt.legend()
-plt.savefig('similar_ravi_test_plot.png')
+plt.savefig('200_jobs_plot.png')
 plt.show()

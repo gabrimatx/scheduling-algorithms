@@ -6,12 +6,12 @@ import math
 from scientific_not import sci_notation
 
 class NCS_scheduler:
-    def __init__(self, time_quantum, oracle):
+    def __init__(self, time_quantum, oracle, epsilon):
         self.queue = []
         self.total_completion_time = 0
         self.k = 1
         self.delta = 1/50
-        self.epsilon = 10
+        self.epsilon = epsilon
         self.quantum = time_quantum
         self.n = 0
         self.current_time = 0
@@ -131,7 +131,7 @@ if __name__ == '__main__':
     
     numjobs = int(input("Insert number of jobs to process: "))
     oracle = JobMeanOracle()
-    scheduler = NCS_scheduler(100, oracle)
+    scheduler = NCS_scheduler(100, oracle, 1)
     filename = r"task_lines.txt"
     with open(filename, "r") as f:
         for i in range(numjobs):
