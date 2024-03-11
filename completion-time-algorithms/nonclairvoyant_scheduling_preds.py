@@ -6,21 +6,22 @@ import math
 from scientific_not import sci_notation
 
 class NCS_scheduler:
-    def __init__(self):
+    def __init__(self, time_quantum, oracle):
         self.queue = []
         self.total_completion_time = 0
         self.k = 1
         self.delta = 1/50
         self.epsilon = 10
-        self.quantum = 10000
+        self.quantum = time_quantum
         self.n = 0
         self.current_time = 0
+        self.oracle = oracle
 
     def add_job(self, job):
         self.queue.append(job)
 
     def oracle_predict(self, job):
-        prediction = oracle.getJobPrediction(job)
+        prediction = self.oracle.getJobPrediction(job)
         job.oracle_prediction = prediction
         return prediction
 
@@ -69,11 +70,10 @@ class NCS_scheduler:
 
     def run(self):
         self.n = len(self.queue)
-        oracle.computePredictions(self.queue[:(len(self.queue) // 100 * 20)])
+        self.oracle.computePredictions(self.queue[:(len(self.queue) // 100 * 20)])
         self.queue = self.queue[(len(self.queue) // 100 * 20):]
         self.queue.sort(key = lambda j: self.oracle_predict(j))
         while len(self.queue) > math.ceil(1 / (self.epsilon**3) * math.log10(self.n)):
-            print(len(self.queue))
             round_median = self.median_estimator()
             round_error = self.error_estimator(round_median)
             if round_error >= (self.delta**2 * self.epsilon * round_median * len(self.queue)**2) / 16:
@@ -91,7 +91,8 @@ class NCS_scheduler:
             else:
                 # Small error, greedy approach
                 self.queue.sort(key = lambda x: x.oracle_prediction - (x.real_duration - x.remaining_duration)) # Implement heap for better efficiency
-                for job_ind in range(len(self.queue)):
+                job_ind = 0
+                while job_ind < len(self.queue):
                     remaining_time_estimate = self.queue[job_ind].oracle_prediction - (self.queue[job_ind].real_duration - self.queue[job_ind].remaining_duration)
                     if remaining_time_estimate <= (1 + self.epsilon) * round_median:
                         if self.queue[job_ind].remaining_duration <= remaining_time_estimate + 3*self.epsilon*round_median:
@@ -101,6 +102,7 @@ class NCS_scheduler:
                         else:
                             self.queue[job_ind].remaining_duration -= remaining_time_estimate + 3*self.epsilon*round_median
                             self.current_time += remaining_time_estimate + 3*self.epsilon*round_median
+                            job_ind += 1
                     else:
                         break
 
@@ -126,9 +128,10 @@ class NCS_scheduler:
 
 
 if __name__ == '__main__':
-    scheduler = NCS_scheduler()
+    
     numjobs = int(input("Insert number of jobs to process: "))
     oracle = JobMeanOracle()
+    scheduler = NCS_scheduler(100, oracle)
     filename = r"task_lines.txt"
     with open(filename, "r") as f:
         for i in range(numjobs):

@@ -6,7 +6,7 @@ class PRR_scheduler:
     def __init__(self, lambda_parameter, time_quantum, oracle):
         self.queue = []
         self.total_completion_time = 0
-        self.round_time = 100
+        self.round_time = 1000
         self.quantum = time_quantum
         self.hyperLambda = lambda_parameter
         self.total_error = 0
@@ -41,18 +41,25 @@ class PRR_scheduler:
                     self.queue[0].remaining_duration -= time_for_spjf
                     time_for_spjf = 0
 
-            while time_for_rr and self.queue:
-                rr_index = rr_index % len(self.queue)
-                if self.queue[rr_index].remaining_duration <= min(time_for_rr, self.quantum):
-                    current_time += self.queue[rr_index].remaining_duration
-                    time_for_rr -= self.queue[rr_index].remaining_duration
-                    self.queue.pop(rr_index)
-                    self.total_completion_time += current_time
-                else:
-                    current_time += min(time_for_rr, self.quantum)
-                    time_for_rr -= min(time_for_rr, self.quantum)
-                    self.queue[rr_index].remaining_duration -= min(time_for_rr, self.quantum)
-                    rr_index += 1
+                if self.queue:
+                    minimum_round_size = min(job.remaining_duration for job in self.queue)
+                    if minimum_round_size > self.quantum:
+                        round_quantum = (minimum_round_size // self.quantum) * self.quantum
+                    else:
+                        round_quantum = self.quantum
+
+                while time_for_rr and self.queue:
+                    rr_index = rr_index % len(self.queue)
+                    if self.queue[rr_index].remaining_duration <= min(time_for_rr, round_quantum):
+                        current_time += self.queue[rr_index].remaining_duration
+                        time_for_rr -= self.queue[rr_index].remaining_duration
+                        self.queue.pop(rr_index)
+                        self.total_completion_time += current_time
+                    else:
+                        current_time += min(time_for_rr, round_quantum)
+                        time_for_rr -= min(time_for_rr, round_quantum)
+                        self.queue[rr_index].remaining_duration -= min(time_for_rr, round_quantum)
+                        rr_index += 1
 
 
     def display_jobs(self):
