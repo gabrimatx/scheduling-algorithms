@@ -21,7 +21,7 @@ class NCS_scheduler:
         self.queue.append(job)
 
     def oracle_predict(self, job):
-        prediction = job.real_duration # TODO: Find how to fix this
+        prediction = max(0, self.oracle.getJobPrediction(job)) # TODO: Find how to fix this
         job.oracle_prediction = prediction
         return prediction
 
@@ -98,11 +98,11 @@ class NCS_scheduler:
                 self.queue.sort(key = lambda x: x.oracle_prediction - (x.real_duration - x.remaining_duration)) # Implement heap for better efficiency
                 job_ind = 0
                 while job_ind < len(self.queue):
-                    remaining_time_estimate = self.queue[job_ind].oracle_prediction - (self.queue[job_ind].real_duration - self.queue[job_ind].remaining_duration)
+                    remaining_time_estimate = max(0, self.queue[job_ind].oracle_prediction - (self.queue[job_ind].real_duration - self.queue[job_ind].remaining_duration))
                     if remaining_time_estimate <= (1 + self.epsilon) * round_median:
                         greedy_completed_moves += 1
                         if remaining_time_estimate + 3*self.epsilon*round_median < 0:
-                            print("AAAAAAAAAAAAAAAAAAAAAAAAA")
+                            print(f"AAAAAAAAAAAAAAAAAAAAAAAAA {remaining_time_estimate}")
                         if self.queue[job_ind].remaining_duration <= remaining_time_estimate + 3*self.epsilon*round_median:
                             self.current_time += self.queue[job_ind].remaining_duration
                             self.queue.pop(job_ind)
