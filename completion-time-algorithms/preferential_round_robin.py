@@ -22,7 +22,6 @@ class PRR_scheduler:
 
     def run(self):
         current_time = 0
-        self.oracle.computePredictions(self.queue)
         self.queue.sort(key = lambda j: self.sort_and_add_error(j))
         while self.queue:
             time_for_rr = self.round_time * self.hyperLambda
