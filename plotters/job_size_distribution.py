@@ -5,7 +5,7 @@ from scipy.stats import gaussian_kde
 sizes = []
 num_of_jobs = 5 * (10 ** 6)
 for i in range(num_of_jobs):
-	single_size = tuple(int(x) for x in input().split(','))[2] // 10000
+	single_size = tuple(int(x) for x in input().split(','))[2] // 1000000
 	sizes.append(single_size)
 
 sizes_array = np.array(sizes)

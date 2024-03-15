@@ -16,7 +16,7 @@ class JobMeanOracle:
 		self.totalMean = 0
 
 	def getJobPrediction(self, Job):
-		return self.jobMeans.get(int(Job.id), random.randint(0, 300000))
+		return self.jobMeans.get(int(Job.id), self.totalMean)
 
 	def computePredictions(self, JobSet):
 		for Job in JobSet:
@@ -40,7 +40,7 @@ class GaussianPerturbationOracle:
 		pass
 
 	def getJobPrediction(self, Job):
-		return Job[2] + np.random.normal(self.mean, self.std_dev, 1)[0]
+		return Job.real_duration + np.random.normal(self.mean, self.std_dev, 1)[0]
 
 
 

@@ -45,8 +45,7 @@ class RR_scheduler:
 
 
 if __name__ == '__main__':
-    time_quantum = int(input("Insert time quantum for round robin: "))
-    scheduler = RR_scheduler(time_quantum)
+    scheduler = RR_scheduler(0.000001)
 
     # Adding jobs
     numjobs = int(input("Insert number of jobs to process: "))
@@ -54,7 +53,7 @@ if __name__ == '__main__':
     with open(filename, "r") as f:
         for i in range(numjobs):
             a = [int(x) for x in f.readline().split(",")]
-            scheduler.add_job(Job(a[1], a[0]//1000, a[2]//1000))
+            scheduler.add_job(Job(a[1], a[0]//1000000, a[2]//1000000))
     # Running the scheduler
     scheduler.run()
     print(f"total_completion_time: {sci_notation(scheduler.total_completion_time)}")
