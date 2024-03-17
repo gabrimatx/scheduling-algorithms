@@ -38,7 +38,7 @@ if __name__ == '__main__':
     with open(filename, "r") as f:
         for i in range(numjobs):
             a = [int(x) for x in f.readline().split(",")]
-            scheduler.add_job(Job(a[1], a[0]//1000, a[2]//1000))
+            scheduler.add_job(Job(a[1], a[0]//1000000, a[2]//1000000))
     # Running the scheduler
     scheduler.run()
     print(f"total_completion_time: {sci_notation(scheduler.total_completion_time)} competitive_ratio: {(2 * scheduler.total_error / numjobs) + 1}")

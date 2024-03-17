@@ -1,6 +1,5 @@
 from job_class import Job
 from scientific_not import sci_notation
-import time
 
 class RR_scheduler:
     def __init__(self, time_quantum):
@@ -13,20 +12,25 @@ class RR_scheduler:
 
     def run(self):
         current_time = 0
-        self.queue = self.queue[(len(self.queue) // 100 * 20):]
+        ordered_jobs = sorted(self.queue)
+        min_index = 0
+        round_quantum = self.quantum
         while self.queue:
             # Run the scheduler in round robin fashion
             job_ind = 0
             queue_size = len(self.queue)
+
             while job_ind < queue_size:
-                if self.quantum >= self.queue[job_ind].remaining_duration:
+                if round_quantum >= self.queue[job_ind].remaining_duration:
                     current_time += (self.queue.pop(job_ind)).remaining_duration
                     self.total_completion_time += current_time
+                    min_index += 1
                     queue_size -= 1
                 else:
-                    current_time += self.quantum
-                    self.queue[job_ind].remaining_duration -= self.quantum
+                    current_time += round_quantum
+                    self.queue[job_ind].remaining_duration -= round_quantum
                     job_ind += 1
+
 
     def display_jobs(self):
         print("Current Jobs in Queue:")
@@ -34,10 +38,10 @@ class RR_scheduler:
             print(job)
 
 
-time_quantum = int(input("Insert time quantum for round robin: "))
+
 
 if __name__ == '__main__':
-    scheduler = RR_scheduler(time_quantum)
+    scheduler = RR_scheduler(0.000001)
 
     # Adding jobs
     numjobs = int(input("Insert number of jobs to process: "))
@@ -45,7 +49,7 @@ if __name__ == '__main__':
     with open(filename, "r") as f:
         for i in range(numjobs):
             a = [int(x) for x in f.readline().split(",")]
-            scheduler.add_job(Job(a[1], a[0]//1000, a[2]//1000))
+            scheduler.add_job(Job(a[1], a[0]//1000000, a[2]//1000000))
     # Running the scheduler
     scheduler.run()
     print(f"total_completion_time: {sci_notation(scheduler.total_completion_time)}")
