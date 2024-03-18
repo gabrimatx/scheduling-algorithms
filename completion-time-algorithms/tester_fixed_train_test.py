@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import random
 import csv
 import time
+np.random.seed(27)
 
 def moving_average(data, window_size):
     weights = np.repeat(1.0, window_size) / window_size
@@ -19,5 +20,11 @@ def moving_average(data, window_size):
 
 def run_simulation(sample_size_train, sample_size_test, training_slice):
     
+    
 
+    pass
+
+
+
+if __name__ == "__main__":
     pass

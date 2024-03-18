@@ -17,7 +17,7 @@ class JobMeanOracle:
 		self.totalMean = 0
 
 	def getJobPrediction(self, job: Job) -> float:
-		return self.jobTotals.get(job.id, self.totalMean) / self.jobOccurrences.get(job.id, self.totalJobOccurrences)
+		return self.jobTotals.get(job.id, self.totalMean) / max(self.jobOccurrences.get(job.id, self.totalJobOccurrences), 1)
 
 	def computePredictions(self, JobSet: list) -> None:
 		for job in JobSet:
