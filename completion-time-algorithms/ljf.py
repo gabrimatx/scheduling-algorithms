@@ -38,7 +38,7 @@ class LJF_scheduler:
             print(job)
 
 if __name__ == '__main__':
-    scheduler = LJF_scheduler(JobMeanOracle())
+    scheduler = LJF_scheduler()
     numjobs = int(input("Insert number of jobs to process: "))
     filename = r"task_lines.txt"
     with open(filename, "r") as f:

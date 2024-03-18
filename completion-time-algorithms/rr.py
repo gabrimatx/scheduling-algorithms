@@ -62,7 +62,7 @@ if __name__ == "__main__":
     scheduler = RR_scheduler()
 
     # Adding jobs
-    numjobs = 10000
+    numjobs = 100
     filename = r"task_lines.txt"
     with open(filename, "r") as f:
         for i in range(numjobs):

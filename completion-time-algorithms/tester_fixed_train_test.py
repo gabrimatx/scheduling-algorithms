@@ -103,10 +103,10 @@ if __name__ == "__main__":
         prr_crs.append(prr_cr)
         ljf_crs.append(ljf_cr)
         rand_crs.append(rand_cr)
-        np.asarray([rr_crs, spjf_crs, prr_crs, ljf_cr, rand_cr]).dump(f"completion-time-algorithms/dumps/cr_dump_{slice}")
+        np.asarray([rr_crs, spjf_crs, prr_crs, ljf_crs, rand_crs]).dump(f"completion-time-algorithms/dumps/cr_dump_{slice}")
 
     plt.figure(figsize=(10, 6))
-    full_data = [rr_crs, spjf_crs, prr_crs, ljf_cr, rand_cr]
+    full_data = [rr_crs, spjf_crs, prr_crs, ljf_crs, rand_crs]
     x_axis = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
     names = ["Round Robin", "Shortest predicted job first", "Preferential round robin", "Longest Job First", "Random scheduling"]
     for i, algo_data in enumerate(full_data):
