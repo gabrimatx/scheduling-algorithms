@@ -76,6 +76,7 @@ if __name__ == "__main__":
         rr_crs.append(rr_cr)
         spjf_crs.append(spjf_cr)
         prr_crs.append(prr_cr)
+        np.asarray([rr_crs, spjf_crs, prr_crs]).dump(f"completion-time-algorithms/dumps/cr_dump_{slice}")
 
     plt.figure(figsize=(10, 6))
     full_data = [rr_crs, spjf_crs, prr_crs]
