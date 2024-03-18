@@ -1,34 +1,34 @@
 import numpy as np
 import random
+from job_class import Job
 class PerfectOracle:
 	def __init__(self):
 		pass
-	def computePredictions(self, job):
+	def computePredictions(self, job: Job) -> None:
 		pass
-	def getJobPrediction(self, job):
-		return job[2]
+	def getJobPrediction(self, job: Job) -> None:
+		return job.real_duration
 
 class JobMeanOracle:
 	def __init__(self):
-		self.jobMeans = {}
+		self.jobTotals = {}
 		self.jobOccurrences = {}
 		self.totalJobOccurrences = 0
 		self.totalMean = 0
 
-	def getJobPrediction(self, Job):
-		return self.jobMeans.get(int(Job.id), self.totalMean)
+	def getJobPrediction(self, job: Job) -> float:
+		return self.jobTotals.get(job.id, self.totalMean) / self.jobOccurrences.get(job.id, self.totalJobOccurrences)
 
-	def computePredictions(self, JobSet):
-		for Job in JobSet:
-			Job[1] = int(Job[1])
-			if Job[1] in self.jobMeans:
-				self.jobMeans[Job[1]] = ((self.jobMeans[Job[1]] * self.jobOccurrences[Job[1]]) + Job[2]) / (self.jobOccurrences[Job[1]] + 1)
-				self.jobOccurrences[Job[1]] += 1
+	def computePredictions(self, JobSet: list) -> None:
+		for job in JobSet:
+			if job.id in self.jobTotals:
+				self.jobTotals[job.id] += job.real_duration 
+				self.jobOccurrences[job.id] += 1
 			else:
-				self.jobMeans[Job[1]] = Job[2]
-				self.jobOccurrences[Job[1]] = 1
+				self.jobTotals[job.id] = job.real_duration
+				self.jobOccurrences[job.id] = 1
 
-			self.totalMean = ((self.totalMean * self.totalJobOccurrences) + Job[2]) / (self.totalJobOccurrences + 1)
+			self.totalMean += job.real_duration 
 			self.totalJobOccurrences += 1
 
 class GaussianPerturbationOracle:
@@ -41,6 +41,8 @@ class GaussianPerturbationOracle:
 
 	def getJobPrediction(self, Job):
 		return Job.real_duration + np.random.normal(self.mean, self.std_dev, 1)[0]
+	
+
 
 
 
