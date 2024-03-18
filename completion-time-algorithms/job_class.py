@@ -1,5 +1,5 @@
 class Job:
-    def __init__(self, id, arrival_time, real_duration, heap_index = -1):
+    def __init__(self, id: int, arrival_time: float, real_duration: float, heap_index = -1):
         self.id = id
         self.arrival_time = arrival_time
         self.real_duration = real_duration

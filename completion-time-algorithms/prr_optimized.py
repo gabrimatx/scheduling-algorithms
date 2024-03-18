@@ -14,6 +14,10 @@ class PRR_scheduler:
         self.total_error = 0
         self.oracle = oracle
 
+    def add_job_set(self, jobset):
+        for job in jobset:
+            self.add_job(job)
+            
     def add_job(self, job):
         self.queue.append(job)
 
@@ -29,7 +33,7 @@ class PRR_scheduler:
         round_robin_processed_time = 0
         time_for_rr = self.hyperLambda
         time_for_spjf = 1 - self.hyperLambda
-        with tqdm(total=len(self.queue), desc = "Jobs processed") as pbar:
+        with tqdm(total=len(self.queue), desc = "Processing (prr)...") as pbar:
             while len(self.queue) > 1:
                 pbar.update(1)
                 if self.queue[0] is min_job_heap.get_top():
