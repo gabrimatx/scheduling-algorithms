@@ -3,6 +3,8 @@ from sjf import SJF_scheduler
 from spjf import SPJF_scheduler
 from prr_optimized import PRR_scheduler
 from ncs import NCS_scheduler
+from ljf import LJF_scheduler
+from random_job import RAND_scheduler
 from oracles import GaussianPerturbationOracle, PerfectOracle, JobMeanOracle
 from job_class import Job
 from tqdm import tqdm
@@ -28,6 +30,8 @@ class Tester:
                 self.test_set.append(job)
         self.sjf_tct = self.compute_sjf_tct()
         self.rr_cr = self.compute_rr_cr()
+        self.ljf_cr = self.compute_ljf_cr()
+        self.rand_cr = self.compute_rand_cr()
     
     def compute_sjf_tct(self) -> int:
         print("Running shortest job first on test set...")
@@ -42,6 +46,25 @@ class Tester:
         rr_scheduler.add_job_set(deepcopy(self.test_set))
         rr_scheduler.run()
         return rr_scheduler.total_completion_time / self.sjf_tct
+    
+    def compute_ljf_cr(self) -> int:
+        print("Running longest job first on test set...")
+        ljf_scheduler = LJF_scheduler()
+        ljf_scheduler.add_job_set(deepcopy(self.test_set))
+        ljf_scheduler.run()
+        return ljf_scheduler.total_completion_time / self.sjf_tct
+    
+    def compute_rand_cr(self) -> int:
+        print("Running random processing on test set...")
+        big_completion_time = 0
+        for i in range(10):
+            print("Running random instance", i, "of 10")
+            rand_scheduler = RAND_scheduler()
+            rand_scheduler.add_job_set(deepcopy(self.test_set))
+            rand_scheduler.run()
+            big_completion_time += rand_scheduler.total_completion_time / self.sjf_tct
+            rand_scheduler.total_completion_time = 0
+        return big_completion_time / 10
 
     def moving_average(data, window_size):
         weights = np.repeat(1.0, window_size) / window_size
@@ -60,7 +83,7 @@ class Tester:
         spjf_sched.run()
         prr_sched.run()
 
-        return self.rr_cr, spjf_sched.total_completion_time / self.sjf_tct, prr_sched.total_completion_time / self.sjf_tct
+        return self.rr_cr, spjf_sched.total_completion_time / self.sjf_tct, prr_sched.total_completion_time / self.sjf_tct, self.ljf_cr, self.rand_cr
 
 
 
@@ -71,17 +94,21 @@ if __name__ == "__main__":
     rr_crs = []
     spjf_crs = []
     prr_crs = []
+    ljf_crs = []
+    rand_crs = []
     for slice in slices:
-        rr_cr, spjf_cr, prr_cr = tester.run_simulation(slice)
+        rr_cr, spjf_cr, prr_cr, ljf_cr, rand_cr = tester.run_simulation(slice)
         rr_crs.append(rr_cr)
         spjf_crs.append(spjf_cr)
         prr_crs.append(prr_cr)
-        np.asarray([rr_crs, spjf_crs, prr_crs]).dump(f"completion-time-algorithms/dumps/cr_dump_{slice}")
+        ljf_crs.append(ljf_cr)
+        rand_crs.append(rand_cr)
+        np.asarray([rr_crs, spjf_crs, prr_crs, ljf_cr, rand_cr]).dump(f"completion-time-algorithms/dumps/cr_dump_{slice}")
 
     plt.figure(figsize=(10, 6))
-    full_data = [rr_crs, spjf_crs, prr_crs]
+    full_data = [rr_crs, spjf_crs, prr_crs, ljf_cr, rand_cr]
     x_axis = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-    names = ["Round Robin", "Shortest predicted job first", "Preferential round robin", "Non-clairvoyant scheduling"]
+    names = ["Round Robin", "Shortest predicted job first", "Preferential round robin", "Longest Job First", "Random scheduling"]
     for i, algo_data in enumerate(full_data):
         sns.lineplot(x=x_axis, y=algo_data, label=names[i])
 
