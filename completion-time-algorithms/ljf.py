@@ -24,13 +24,10 @@ class LJF_scheduler:
     def run(self):
         current_time = 0
         self.queue.sort(reverse = True)
-        with tqdm(total=len(self.queue), desc = "Processing (lpjf)...") as pbar:
-            while self.queue:
-                job = self.queue[0]
-                self.queue = self.queue[1:]
-                current_time += job.remaining_duration
-                self.total_completion_time += current_time
-                pbar.update(1)
+        for i in tqdm(range(len(self.queue)), "Processing (lfj)..."):
+            job = self.queue[i]
+            current_time += job.remaining_duration
+            self.total_completion_time += current_time
 
     def display_jobs(self):
         print("Current Jobs in Queue:")

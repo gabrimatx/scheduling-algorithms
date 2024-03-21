@@ -91,6 +91,7 @@ class PRR_scheduler:
 
             current_time += self.queue.pop().remaining_duration - round_robin_processed_time
             self.total_completion_time += current_time
+            pbar.update(1)
 
     def display_jobs(self):
         print("Current Jobs in Queue:")
@@ -101,7 +102,7 @@ class PRR_scheduler:
 if __name__ == "__main__":
     l = 0.5
     scheduler = PRR_scheduler(l, JobMeanOracle())
-    numjobs = 1000000
+    numjobs = 100000
     filename = r"task_lines.txt"
     with open(filename, "r") as f:
         for i in tqdm(range(numjobs), "Job parsing"):

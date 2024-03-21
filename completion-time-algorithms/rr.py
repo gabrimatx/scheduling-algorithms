@@ -36,14 +36,19 @@ class RR_scheduler:
         round_quantum = self.compute_round_quantum(ordered_jobs, min_index)
         job_ind = 0
         with tqdm(total=len(self.queue), desc="Processing (rr)...") as pbar:
-            while self.queue:
+            while min_index < len(ordered_jobs):
                 job_ind = job_ind % len(self.queue)
 
                 if not job_ind:
                     round_quantum = self.compute_round_quantum(ordered_jobs, min_index)
 
+                if self.queue[job_ind].remaining_duration == 0:
+                    job_ind += 1
+                    continue
+                
                 if round_quantum >= self.queue[job_ind].remaining_duration:
-                    current_time += (self.queue.pop(job_ind)).remaining_duration
+                    current_time += self.queue[job_ind].remaining_duration
+                    self.queue[job_ind].remaining_duration = 0
                     pbar.update(1)
                     self.total_completion_time += current_time
                     min_index += 1

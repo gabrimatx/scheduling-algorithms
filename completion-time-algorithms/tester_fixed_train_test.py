@@ -64,6 +64,7 @@ class Tester:
             rand_scheduler.run()
             big_completion_time += rand_scheduler.total_completion_time / self.sjf_tct
             rand_scheduler.total_completion_time = 0
+            rand_scheduler.queue = []
         return big_completion_time / 10
 
     def moving_average(data, window_size):

@@ -25,13 +25,10 @@ class SPJF_scheduler:
     def run(self):
         current_time = 0
         self.queue.sort(key = lambda j: self.sort_and_add_error(j))
-        with tqdm(total=len(self.queue), desc = "Processing (spjf)...") as pbar:
-            while self.queue:
-                job = self.queue[0]
-                self.queue = self.queue[1:]
-                current_time += job.remaining_duration
-                self.total_completion_time += current_time
-                pbar.update(1)
+        for i in tqdm(range(len(self.queue)), "Processing (spjf)..."):
+            job = self.queue[i]
+            current_time += job.remaining_duration
+            self.total_completion_time += current_time
 
     def display_jobs(self):
         print("Current Jobs in Queue:")
