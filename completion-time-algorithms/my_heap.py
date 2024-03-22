@@ -98,7 +98,7 @@ class heap:
                 
 
 if __name__ == "__main__":
-    l = [Job(i, 0, random.randint(0, 16)) for i in range(15)]
+    l = [Job(i, 0, random.randint(0, 16)) for i in range(15)] + [Job(69, 0, float('inf'))]
     my_heap = heap(l.copy())
     print(my_heap)
     print(my_heap.container)
