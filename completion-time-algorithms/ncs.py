@@ -22,12 +22,11 @@ class NCS_scheduler:
         self.queue.append(job)
 
     def oracle_predict(self, job):
-        prediction = max(0, self.oracle.getJobPrediction(job)) # TODO: Find how to fix this
+        prediction = max(0, self.oracle.getJobPrediction(job))
         job.oracle_prediction = prediction
         return prediction
 
     def median_estimator(self):
-        # Generate sample S 
         S = random.choices([i for i in range(len(self.queue))], k = math.ceil(math.log(2 * self.n) / (self.delta**2)))
         jobs_to_finish = len(S) // 2 
         completed_jobs = set()
@@ -35,7 +34,6 @@ class NCS_scheduler:
         last_job_duration = 1
         while len(completed_S_elements) < jobs_to_finish:
             job_ind = 0
-
             if self.queue:
                 remaining_sizes = [job.remaining_duration for job in [self.queue[j_ind] for j_ind in S if self.queue[j_ind].remaining_duration > 0]]
                 if remaining_sizes:
@@ -47,7 +45,6 @@ class NCS_scheduler:
                     round_quantum = ((minimum_round_size) // self.quantum) * self.quantum
                 else:
                     round_quantum = self.quantum
-
             round_quantum = self.quantum
             while job_ind < len(S):
                 if S[job_ind] in completed_jobs:
@@ -67,16 +64,13 @@ class NCS_scheduler:
                 job_ind += 1
         for finished_job in sorted(list(completed_jobs), reverse=True):
             self.queue.pop(finished_job)
-        # print(f"lastjd {last_job_duration}")
         return last_job_duration
 
     def error_estimator(self, estimated_median_k):
-        # Construct the Q family 
         Q = [(J, J) for J in self.queue]
         for job_index in range(len(self.queue)):
             for second_job_index in range(job_index):
                 Q += [tuple([self.queue[second_job_index], self.queue[job_index]])]
-
         if not Q:
             return 0
         P = random.choices(Q, k = math.ceil((1 / (self.epsilon ** 2)) * math.log10(self.n)))
@@ -97,10 +91,8 @@ class NCS_scheduler:
         time_in_median = 0
         time_in_error = 0
 
-
         while len(self.queue) > math.ceil(1 / (self.epsilon**3) * math.log10(self.n)):
             self.k += 1
-
             m_b = time.time()
             round_median = self.median_estimator()
             m_a = time.time()
@@ -112,8 +104,6 @@ class NCS_scheduler:
             if round_error >= (self.delta**2 * self.epsilon * round_median * len(self.queue)**2) / 16:
                 # Big error, run round robin for 2*round_median
                 round_robin_rounds += 1
-                if round_median == 0:
-                    print("GRAVE")
                 job_ind = 0
                 while job_ind < len(self.queue):
                     if self.queue[job_ind].remaining_duration > 2 * round_median:
@@ -126,14 +116,12 @@ class NCS_scheduler:
                         job_ind += 1
             else:
                 # Small error, greedy approach
-                self.queue.sort(key = lambda x: x.oracle_prediction - (x.real_duration - x.remaining_duration)) # Implement heap for better efficiency
+                self.queue.sort(key = lambda x: x.oracle_prediction - (x.real_duration - x.remaining_duration)) 
                 job_ind = 0
                 while job_ind < len(self.queue):
                     remaining_time_estimate = max(0, self.queue[job_ind].oracle_prediction - (self.queue[job_ind].real_duration - self.queue[job_ind].remaining_duration))
                     if remaining_time_estimate <= (1 + self.epsilon) * round_median:
                         greedy_completed_moves += 1
-                        if remaining_time_estimate + 3*self.epsilon*round_median < 0:
-                            print(f"AAAAAAAAAAAAAAAAAAAAAAAAA {remaining_time_estimate}")
                         if self.queue[job_ind].remaining_duration <= remaining_time_estimate + 3*self.epsilon*round_median:
                             self.current_time += self.queue[job_ind].remaining_duration
                             self.queue.pop(job_ind)
@@ -145,11 +133,7 @@ class NCS_scheduler:
                     else:
                         break
 
-        # Finish with round robin
-        # print(len(self.queue), self.k, f"rr round  {round_robin_rounds} greedy round {self.k - round_robin_rounds}")
-        # print(f"time in median estimation {time_in_median}\n time in error estimation {time_in_error}")
         while self.queue:
-            # Run the scheduler in round robin fashion
             job_ind = 0
             queue_size = len(self.queue)
             while job_ind < queue_size:
@@ -162,7 +146,6 @@ class NCS_scheduler:
                     self.queue[job_ind].remaining_duration -= self.quantum
                     job_ind += 1
 
-        # print(f"greedy completed jobs {greedy_completed_moves}")
 
     def display_jobs(self):
         print("Current Jobs in Queue:")
@@ -179,7 +162,7 @@ if __name__ == '__main__':
     with open(filename, "r") as f:
         for i in range(numjobs):
             a = [int(x) for x in f.readline().split(",")]
-            scheduler.add_job(Job(a[1], a[0]//1000, a[2]//1000))
+            scheduler.add_job(Job(a[1], a[0]//1000000, a[2]//1000000))
     # Running the scheduler
     scheduler.run()
     print(f"total_completion_time: {sci_notation(scheduler.total_completion_time)}")

@@ -33,13 +33,7 @@ class heap:
     def process_job(self, job_index, amount):
         process_time = min(self.container[job_index].remaining_duration, amount)
         self.container[job_index].remaining_duration -= process_time
-        if self.container[job_index].remaining_duration >= 0:
-            self.heapify(job_index)
-        else: 
-            raise BaseException
-            
-
-        return process_time
+        self.heapify(job_index)
     
     def pop_at_index(self, job_index):
         if job_index == len(self.container) - 1:

@@ -1,4 +1,4 @@
-from rr import RR_scheduler
+from rr_optimized import RR_scheduler
 from sjf import SJF_scheduler
 from spjf import SPJF_scheduler
 from prr_optimized import PRR_scheduler
@@ -78,8 +78,8 @@ class Tester:
         training_set_slice = self.training_set[:len(self.training_set) // 10 * training_slice]
         oracle.computePredictions(training_set_slice)
         spjf_sched, prr_sched = SPJF_scheduler(oracle), PRR_scheduler(0.5, oracle)
-        spjf_sched.add_job_set(self.test_set)
-        prr_sched.add_job_set(self.test_set)
+        spjf_sched.add_job_set(deepcopy(self.test_set))
+        prr_sched.add_job_set(deepcopy(self.test_set))
 
         spjf_sched.run()
         prr_sched.run()
@@ -89,7 +89,7 @@ class Tester:
 
 
 if __name__ == "__main__":
-    power_for_test = 4
+    power_for_test = 6
     tester = Tester(2 * 10 ** power_for_test, 10 ** power_for_test, "jobs.csv")
     slices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     rr_crs = []
@@ -117,10 +117,11 @@ if __name__ == "__main__":
     plt.ylabel('Average Empirical Competitive Ratio')
     plt.title('Competitive ratios with job means predictions')
     plt.xticks(rotation=45)
-    plt.ylim(0.5, 6)
+    plt.ylim(0, 10)
     plt.grid(True)
     plt.legend()
-    filename = f'completion-time-algorithms/plots/fixed-train-test/job_plot_{random.randint(0,100)}.png'
+    job_num_name = str(3 * 10 ** (power_for_test - 6)) + 'M' if power_for_test >= 6 else str(3 * 10 ** (power_for_test - 3)) + 'k'
+    filename = f'completion-time-algorithms/plots/fixed-train-test/job_plot_{job_num_name}.png'
     print("Saved " + filename)
     plt.savefig(filename)
     plt.show()
