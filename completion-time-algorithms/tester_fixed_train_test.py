@@ -7,6 +7,7 @@ from ljf import LJF_scheduler
 from random_job import RAND_scheduler
 from oracles import GaussianPerturbationOracle, PerfectOracle, JobMeanOracle
 from job_class import Job
+from scientific_not import sci_notation
 from tqdm import tqdm
 import numpy as np
 import seaborn as sns
@@ -14,6 +15,7 @@ import matplotlib.pyplot as plt
 import random
 import pandas as pd
 import time
+import sys
 from copy import copy, deepcopy
 
 np.random.seed(27)
@@ -75,7 +77,7 @@ class Tester:
     def run_simulation(self, training_slice: int) -> tuple:
         print("Performing test on slice", training_slice)
         oracle = JobMeanOracle()
-        training_set_slice = self.training_set[:len(self.training_set) // 10 * training_slice]
+        training_set_slice = self.training_set[(len(self.training_set) * (10 - training_slice))//10:]
         oracle.computePredictions(training_set_slice)
         spjf_sched, prr_sched = SPJF_scheduler(oracle), PRR_scheduler(0.5, oracle)
         spjf_sched.add_job_set(deepcopy(self.test_set))
@@ -89,8 +91,15 @@ class Tester:
 
 
 if __name__ == "__main__":
-    power_for_test = 6
-    tester = Tester(2 * 10 ** power_for_test, 10 ** power_for_test, "jobs.csv")
+    if len(sys.argv) < 2:
+        print("Please provide an integer argument.")
+        raise Exception
+    try:
+        power_for_test = int(sys.argv[1])
+    except ValueError:
+        print("Invalid integer argument provided.")
+        raise Exception
+    tester = Tester(10 ** (power_for_test + 1), 5 * 10 ** power_for_test, "complete_jobset.csv")
     slices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     rr_crs = []
     spjf_crs = []
@@ -115,13 +124,13 @@ if __name__ == "__main__":
 
     plt.xlabel('Slice of the training set')
     plt.ylabel('Average Empirical Competitive Ratio')
-    plt.title('Competitive ratios with job means predictions')
+    plt.title(f'Competitive ratios with job means predictions: Test: 10^{power_for_test + 1} | Training: 5 * 10^{power_for_test}')
     plt.xticks(rotation=45)
     plt.ylim(0, 10)
     plt.grid(True)
     plt.legend()
-    job_num_name = str(3 * 10 ** (power_for_test - 6)) + 'M' if power_for_test >= 6 else str(3 * 10 ** (power_for_test - 3)) + 'k'
-    filename = f'completion-time-algorithms/plots/fixed-train-test/job_plot_{job_num_name}.png'
+    job_num_name = str(15 * 10 ** (power_for_test - 6)) + 'M' if power_for_test >= 6 else str(15 * 10 ** (power_for_test - 3)) + 'k'
+    filename = f'completion-time-algorithms/plots/fixed-train-test/adj_job_plot_{job_num_name}.png'
     print("Saved " + filename)
     plt.savefig(filename)
-    plt.show()
+    # plt.show()

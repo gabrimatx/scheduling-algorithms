@@ -1,2 +1,2 @@
 def sci_notation(num):
-	return "{:e}".format(num)
+	return "{:.2e}".format(num)
