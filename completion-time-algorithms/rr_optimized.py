@@ -7,7 +7,6 @@ class RR_scheduler:
     def __init__(self):
         self.queue = []
         self.total_completion_time = 0
-        self.quantum = 0.01
 
     def add_job(self, job):
         self.queue.append(job)
