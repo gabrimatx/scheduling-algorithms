@@ -69,9 +69,10 @@ class Tester:
             rand_scheduler.queue = []
         return big_completion_time / 10
 
-    def run_simulation(self, training_slice: int) -> tuple:
+    def run_simulation(self, training_slice: int, ot: int) -> tuple:
         print("Performing test on slice", training_slice)
-        oracle = AugmentedMedianOracle()
+        d = {0: JobMeanOracle, 1: JobMedianOracle, 2: AugmentedMeanOracle, 3: AugmentedMedianOracle}
+        oracle = d[ot]()
         training_set_slice = self.training_set[(len(self.training_set) * (10 - training_slice))//10:]
         if training_set_slice:
             oracle.computePredictions(training_set_slice)
@@ -87,11 +88,12 @@ class Tester:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Please provide an integer argument.")
+    if len(sys.argv) < 3:
+        print("Please provide an integer arguments.")
         raise Exception
     try:
         power_for_test = int(sys.argv[1])
+        oracle_type = int(sys.argv[2])
     except ValueError:
         print("Invalid integer argument provided.")
         raise Exception
@@ -103,7 +105,7 @@ if __name__ == "__main__":
     ljf_crs = []
     rand_crs = []
     for slice in slices:
-        rr_cr, spjf_cr, prr_cr, ljf_cr, rand_cr = tester.run_simulation(slice)
+        rr_cr, spjf_cr, prr_cr, ljf_cr, rand_cr = tester.run_simulation(slice, oracle_type)
         rr_crs.append(rr_cr)
         spjf_crs.append(spjf_cr)
         prr_crs.append(prr_cr)
@@ -125,8 +127,8 @@ if __name__ == "__main__":
     plt.ylim(0, 10)
     plt.grid(True)
     plt.legend()
+    oracle_type_name = ["google-mean-oracle", "google-median-oracle", "google-augmented_mean-oracle", "google-augmented_median-oracle"]
     job_num_name = str(15 * 10 ** (power_for_test - 6)) + 'M' if power_for_test >= 6 else str(15 * 10 ** (power_for_test - 3)) + 'k'
-    filename = f'completion-time-algorithms/plots/google-median-oracle/{job_num_name}aug_adj_job_plot_{job_num_name}.png'
+    filename = f'completion-time-algorithms/plots-2/{oracle_type_name[oracle_type]}/{power_for_test}_adj_job_plot_{job_num_name}.png'
     print("Saved " + filename)
     plt.savefig(filename)
-    # plt.show()

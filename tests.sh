@@ -1,4 +1,16 @@
-python3 completion-time-algorithms/tester_fixed_train_test.py 3
-python3 completion-time-algorithms/tester_fixed_train_test.py 4
-python3 completion-time-algorithms/tester_fixed_train_test.py 5
-python3 completion-time-algorithms/tester_fixed_train_test.py 6
+python3 completion-time-algorithms/tester_fixed_train_test.py 3 0
+python3 completion-time-algorithms/tester_fixed_train_test.py 4 0
+python3 completion-time-algorithms/tester_fixed_train_test.py 5 0
+python3 completion-time-algorithms/tester_fixed_train_test.py 6 0
+python3 completion-time-algorithms/tester_fixed_train_test.py 3 1
+python3 completion-time-algorithms/tester_fixed_train_test.py 4 1
+python3 completion-time-algorithms/tester_fixed_train_test.py 5 1
+python3 completion-time-algorithms/tester_fixed_train_test.py 6 1
+python3 completion-time-algorithms/tester_fixed_train_test.py 3 2
+python3 completion-time-algorithms/tester_fixed_train_test.py 4 2
+python3 completion-time-algorithms/tester_fixed_train_test.py 5 2
+python3 completion-time-algorithms/tester_fixed_train_test.py 6 2
+python3 completion-time-algorithms/tester_fixed_train_test.py 3 3
+python3 completion-time-algorithms/tester_fixed_train_test.py 4 3
+python3 completion-time-algorithms/tester_fixed_train_test.py 5 3
+python3 completion-time-algorithms/tester_fixed_train_test.py 6 3
