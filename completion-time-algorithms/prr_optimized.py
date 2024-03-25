@@ -17,7 +17,7 @@ class PRR_scheduler:
     def add_job_set(self, jobset):
         for job in jobset:
             self.add_job(job)
-            
+
     def add_job(self, job):
         self.queue.append(job)
 
@@ -36,10 +36,14 @@ class PRR_scheduler:
         completed_count = 0
         time_for_rr = self.hyperLambda
         time_for_spjf = 1 - self.hyperLambda
-        for index, job in tqdm(enumerate(self.queue), total=len(self.queue), desc = "Enumerating jobs (prr)..."):
+        for index, job in tqdm(
+            enumerate(self.queue),
+            total=len(self.queue),
+            desc="Enumerating jobs (prr)...",
+        ):
             job.queue_index = index
 
-        with tqdm(total=len(self.queue), desc = "Processing (prr)...") as pbar:
+        with tqdm(total=len(self.queue), desc="Processing (prr)...") as pbar:
             while len(self.queue) > completed_count:
                 remaining_jobs = max(len(self.queue) - completed_count, 1)
                 while completed_jobs[spjf_index]:
@@ -48,22 +52,26 @@ class PRR_scheduler:
                 pbar.update(1)
                 if self.queue[spjf_index] is min_job_heap.get_top():
                     rounds_to_complete = (
-                        self.queue[spjf_index].remaining_duration - round_robin_processed_time
+                        self.queue[spjf_index].remaining_duration
+                        - round_robin_processed_time
                     ) / (time_for_spjf + time_for_rr / remaining_jobs)
-                    processing_time = (time_for_rr / remaining_jobs) * rounds_to_complete
+                    processing_time = (
+                        time_for_rr / remaining_jobs
+                    ) * rounds_to_complete
                     round_robin_processed_time += processing_time
                     current_time += rounds_to_complete
                     self.total_completion_time += current_time
 
                     completed_jobs[spjf_index] = True
                     completed_count += 1
-                    self.queue[spjf_index].remaining_duration = float('inf')
+                    self.queue[spjf_index].remaining_duration = float("inf")
                     min_job_heap.heapify(self.queue[spjf_index].heap_index)
                     spjf_index += 1
 
                 else:
                     rounds_to_complete_predicted = (
-                        self.queue[spjf_index].remaining_duration - round_robin_processed_time
+                        self.queue[spjf_index].remaining_duration
+                        - round_robin_processed_time
                     ) / (time_for_spjf + time_for_rr / remaining_jobs)
 
                     rounds_to_complete_smallest = (
@@ -82,7 +90,7 @@ class PRR_scheduler:
 
                         completed_jobs[spjf_index] = True
                         completed_count += 1
-                        self.queue[spjf_index].remaining_duration = float('inf')
+                        self.queue[spjf_index].remaining_duration = float("inf")
                         min_job_heap.heapify(self.queue[spjf_index].heap_index)
                         spjf_index += 1
                     else:
@@ -97,35 +105,20 @@ class PRR_scheduler:
                             time_for_rr / remaining_jobs
                         ) * rounds_to_complete_smallest
 
-
                         round_robin_processed_time += processing_time
                         current_time += rounds_to_complete_smallest
                         self.total_completion_time += current_time
 
                         completed_jobs[completed_job.queue_index] = True
                         completed_count += 1
-                        self.queue[completed_job.queue_index].remaining_duration = float('inf')
-                        min_job_heap.heapify(self.queue[completed_job.queue_index].heap_index)
+                        self.queue[completed_job.queue_index].remaining_duration = (
+                            float("inf")
+                        )
+                        min_job_heap.heapify(
+                            self.queue[completed_job.queue_index].heap_index
+                        )
 
     def display_jobs(self):
         print("Current Jobs in Queue:")
         for job in self.queue:
             print(job)
-
-
-if __name__ == "__main__":
-    l = 0.5
-    scheduler = PRR_scheduler(l, JobMeanOracle())
-    numjobs = 1000000
-    filename = r"task_lines.txt"
-    with open(filename, "r") as f:
-        for i in tqdm(range(numjobs), "Job parsing"):
-            a = [int(x) for x in f.readline().split(",")]
-            scheduler.add_job(Job(a[1], a[0] // 1000000, a[2] // 1000000))
-    # Running the scheduler
-    tstart = time.time()
-    scheduler.run()
-    tend = time.time()
-    print(
-        f"total_completion_time: {sci_notation(scheduler.total_completion_time)} time: {tend - tstart}"
-    )

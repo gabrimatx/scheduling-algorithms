@@ -17,9 +17,11 @@ class RR_scheduler:
             self.add_job(job)
 
     def compute_round_quantum(self, ord_jobs, min_ind):
-        minimum_round_size = ord_jobs[min_ind].remaining_duration 
-        round_quantum = max(minimum_round_size // self.quantum * self.quantum, self.quantum)
-        return 0.01
+        minimum_round_size = ord_jobs[min_ind].remaining_duration
+        round_quantum = max(
+            minimum_round_size // self.quantum * self.quantum, self.quantum
+        )
+        return round_quantum
 
     def run(self):
         current_time = 0
@@ -37,7 +39,7 @@ class RR_scheduler:
                 if self.queue[job_ind].remaining_duration == 0:
                     job_ind += 1
                     continue
-                
+
                 if round_quantum >= self.queue[job_ind].remaining_duration:
                     current_time += self.queue[job_ind].remaining_duration
                     self.queue[job_ind].remaining_duration = 0
@@ -53,18 +55,3 @@ class RR_scheduler:
         print("Current Jobs in Queue:")
         for job in self.queue:
             print(job)
-
-
-if __name__ == "__main__":
-    scheduler = RR_scheduler()
-
-    # Adding jobs
-    numjobs = 50
-    filename = r"task_lines.txt"
-    with open(filename, "r") as f:
-        for i in range(numjobs):
-            a = [int(x) for x in f.readline().split(",")]
-            scheduler.add_job(Job(a[1], a[0] // 1000000, a[2] // 1000000))
-    # Running the scheduler
-    scheduler.run()
-    print(f"total_completion_time: {sci_notation(scheduler.total_completion_time)}")
