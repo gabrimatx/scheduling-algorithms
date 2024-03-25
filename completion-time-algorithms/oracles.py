@@ -1,7 +1,9 @@
 import numpy as np
 import random
 from job_class import Job
-
+import numpy as np
+from scipy.optimize import curve_fit
+from scipy.stats import gaussian_kde, powerlaw, pareto, ks_2samp, anderson
 
 class PerfectOracle:
     def __init__(self):
@@ -43,9 +45,10 @@ class JobMedianOracle:
     def __init__(self):
         self.jobMedians = {}
         self.totalMedian = 0
+        self.myPareto = 1.1
 
     def getJobPrediction(self, job: Job) -> float:
-        return self.jobMedians.get(job.id, self.totalMedian)
+        return self.jobMedians.get(job.id, self.totalMedian * np.random.pareto(a = self.myPareto, size = 1)[0])
     
     def median(self, lst):
         sorted_lst = sorted(lst)
@@ -69,6 +72,8 @@ class JobMedianOracle:
             
         for k,v in occurrences_per_id.items():
             self.jobMedians[k] = self.median(v)
+        if total_occurrences:
+            self.myPareto = pareto.fit(total_occurrences)[0]
         self.totalMedian = self.median(total_occurrences)
                 
 
@@ -82,3 +87,4 @@ class GaussianPerturbationOracle:
 
     def getJobPrediction(self, Job):
         return Job.real_duration + np.random.normal(self.mean, self.std_dev, 1)[0]
+
