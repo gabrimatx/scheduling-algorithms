@@ -5,7 +5,7 @@ from prr_optimized import PRR_scheduler
 from ncs import NCS_scheduler
 from ljf import LJF_scheduler
 from random_job import RAND_scheduler
-from oracles import GaussianPerturbationOracle, PerfectOracle, JobMeanOracle, JobMedianOracle
+from oracles import GaussianPerturbationOracle, PerfectOracle, JobMeanOracle, JobMedianOracle, AugmentedMedianOracle, AugmentedMeanOracle
 from job_class import Job
 from scientific_not import sci_notation
 from tqdm import tqdm
@@ -76,7 +76,7 @@ class Tester:
 
     def run_simulation(self, training_slice: int) -> tuple:
         print("Performing test on slice", training_slice)
-        oracle = JobMedianOracle()
+        oracle = AugmentedMedianOracle()
         training_set_slice = self.training_set[(len(self.training_set) * (10 - training_slice))//10:]
         if training_set_slice:
             oracle.computePredictions(training_set_slice)
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     plt.grid(True)
     plt.legend()
     job_num_name = str(15 * 10 ** (power_for_test - 6)) + 'M' if power_for_test >= 6 else str(15 * 10 ** (power_for_test - 3)) + 'k'
-    filename = f'completion-time-algorithms/plots/google-median-oracle/adj_job_plot_{job_num_name}.png'
+    filename = f'completion-time-algorithms/plots/google-augmented_median-oracle/{job_num_name}_adj_job_plot_{job_num_name}.png'
     print("Saved " + filename)
     plt.savefig(filename)
     # plt.show()

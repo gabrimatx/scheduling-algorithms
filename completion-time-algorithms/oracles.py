@@ -24,7 +24,7 @@ class ParetoOracle:
         self.shape, self.loc, self.scale = pareto.fit(lengths)
     
     def getJobPrediction(self) -> float:
-        return (self.shape * self.scale) / (self.shape - 1)
+        return (self.shape * self.scale) / (self.shape - 1) if self.shape > 1 else float('inf')
     
 class AugmentedMedianOracle:
     def __init__(self):
@@ -61,7 +61,36 @@ class AugmentedMedianOracle:
         myPareto = ParetoOracle()
         myPareto.computePredictions(JobSet)
         self.expected_pareto = myPareto.getJobPrediction()
-    
+
+class AugmentedMeanOracle:
+    def __init__(self):
+        self.jobTotals = {}
+        self.jobOccurrences = {}
+        self.totalJobOccurrences = 0
+        self.totalMean = 0
+        self.expected_pareto = 1
+
+    def getJobPrediction(self, job: Job) -> float:
+        if job.id in self.jobTotals:
+            return self.jobTotals[job.id] / self.jobOccurrences[job.id]
+        else:
+            return self.expected_pareto
+
+    def computePredictions(self, JobSet: list) -> None:
+        for job in JobSet:
+            if job.id in self.jobTotals:
+                self.jobTotals[job.id] += job.real_duration
+                self.jobOccurrences[job.id] += 1
+            else:
+                self.jobTotals[job.id] = job.real_duration
+                self.jobOccurrences[job.id] = 1
+
+            self.totalMean += job.real_duration
+            self.totalJobOccurrences += 1
+        myPareto = ParetoOracle()
+        myPareto.computePredictions(JobSet)
+        self.expected_pareto = myPareto.getJobPrediction()
+
 class JobMeanOracle:
     def __init__(self):
         self.jobTotals = {}
@@ -133,9 +162,11 @@ class GaussianPerturbationOracle:
 
 if __name__ == "__main__":
     a = AugmentedMedianOracle()
-    a.computePredictions([Job(0, 0, i + 200) for i in (np.random.pareto(a = 17, size = 100000) * 2000)])
+    h = [Job(0, 0, i + 200) for i in (np.random.pareto(a = 17, size = 100000) * 10000)]
+    a.computePredictions(h)
     print(a.getJobPrediction(Job(1, 0, 0)))
     print(a.getJobPrediction(Job(0, 0, 0)))
     print(a.getJobPrediction(Job(1, 0, 0)))
     print(a.getJobPrediction(Job(0, 0, 0)))
     print(a.getJobPrediction(Job(2, 0, 0)))
+    print(np.mean([i.remaining_duration for i in h]))
