@@ -9,7 +9,7 @@ class Job:
         self.queue_index = queue_index
         
     def __repr__(self):
-        return f"Job {self.id} ({self.remaining_duration} units remaining), position {self.heap_index} in the heap"
+        return f"Job-{self.id}-({self.remaining_duration} units)"
 
     def __lt__(self, other):
         # Comparison based on predicted duration
