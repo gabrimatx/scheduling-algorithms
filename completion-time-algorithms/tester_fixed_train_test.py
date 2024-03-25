@@ -69,11 +69,6 @@ class Tester:
             rand_scheduler.queue = []
         return big_completion_time / 10
 
-    def moving_average(data, window_size):
-        weights = np.repeat(1.0, window_size) / window_size
-        return np.convolve(data, weights, 'valid')
-
-
     def run_simulation(self, training_slice: int) -> tuple:
         print("Performing test on slice", training_slice)
         oracle = AugmentedMedianOracle()
@@ -131,7 +126,7 @@ if __name__ == "__main__":
     plt.grid(True)
     plt.legend()
     job_num_name = str(15 * 10 ** (power_for_test - 6)) + 'M' if power_for_test >= 6 else str(15 * 10 ** (power_for_test - 3)) + 'k'
-    filename = f'completion-time-algorithms/plots/google-augmented_median-oracle/{job_num_name}_adj_job_plot_{job_num_name}.png'
+    filename = f'completion-time-algorithms/plots/google-median-oracle/{job_num_name}aug_adj_job_plot_{job_num_name}.png'
     print("Saved " + filename)
     plt.savefig(filename)
     # plt.show()
