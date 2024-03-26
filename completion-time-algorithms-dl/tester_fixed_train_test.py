@@ -147,10 +147,15 @@ if __name__ == "__main__":
         "Longest Job First",
         "Random scheduling",
     ]
-
+    oracle_mapping = {
+        0: JobMeanOracle,
+        1: JobMedianOracle,
+        2: AugmentedMeanOracle,
+        3: AugmentedMedianOracle,
+    }
     for algo_data, name in zip(full_data, names):
         sns.lineplot(x=x_axis, y=algo_data, label=name)
-
+    sns.lineplot(x=x_axis, y=1, label = "Optimal")
     plt.xlabel("Slice of the training set")
     plt.ylabel("Average Empirical Competitive Ratio")
     plt.title(
@@ -171,6 +176,6 @@ if __name__ == "__main__":
         if power_for_test >= 6
         else f"{15 * 10 ** (power_for_test - 3)}k"
     )
-    filename = f"completion-time-algorithms-dl/{power_for_test}_adj_job_plot_{job_num_name}.png"
+    filename = f"completion-time-algorithms-dl/plots/{oracle_type_name[oracle_type]}/{power_for_test}_{oracle_mapping[oracle_type].__name__}_{job_num_name}.png"
     print("Saved " + filename)
     plt.savefig(filename)
