@@ -11,6 +11,7 @@ from rr_optimized import RR_scheduler
 from ljf import LJF_scheduler
 from random_job import RAND_scheduler
 from spjf import SPJF_scheduler
+from spjf_dl import DSPJF_scheduler
 from prr_optimized import PRR_scheduler
 from oracles import (
     GaussianPerturbationOracle,
@@ -19,6 +20,7 @@ from oracles import (
     JobMedianOracle,
     AugmentedMedianOracle,
     AugmentedMeanOracle,
+    DynamicJobMeanOracle
 )
 from scientific_not import sci_notation
 
@@ -83,14 +85,17 @@ class Tester:
             3: AugmentedMedianOracle,
         }
         oracle_cls = oracle_mapping[oracle_type]()
+        d_oracle = DynamicJobMeanOracle()
         training_set_slice = self.training_set[
             (len(self.training_set) * (10 - training_slice)) // 10 :
         ]
         if training_set_slice:
             oracle_cls.computePredictions(training_set_slice)
+            d_oracle.computePredictions(training_set_slice)
         spjf_sched, prr_sched = SPJF_scheduler(oracle_cls), PRR_scheduler(
             0.5, oracle_cls
         )
+        dspjf_sched = DSPJF_scheduler(d_oracle)
 
         spjf_sched.add_job_set(deepcopy(self.test_set))
         spjf_sched.run()
@@ -98,10 +103,14 @@ class Tester:
         prr_sched.add_job_set(deepcopy(self.test_set))
         prr_sched.run()
 
+        dspjf_sched.add_job_set(deepcopy(self.test_set))
+        dspjf_sched.run()
+
         return (
             self.rr_cr,
             spjf_sched.total_completion_time / self.sjf_tct,
             prr_sched.total_completion_time / self.sjf_tct,
+            dspjf_sched.total_completion_time / self.sjf_tct,
             self.ljf_cr,
             self.rand_cr,
         )
@@ -134,6 +143,7 @@ if __name__ == "__main__":
         "Round Robin",
         "Shortest predicted job first",
         "Preferential round robin",
+        "Dynamic SPJF",
         "Longest Job First",
         "Random scheduling",
     ]
@@ -161,6 +171,6 @@ if __name__ == "__main__":
         if power_for_test >= 6
         else f"{15 * 10 ** (power_for_test - 3)}k"
     )
-    filename = f"completion-time-algorithms/plots-2/{oracle_type_name[oracle_type]}/{power_for_test}_adj_job_plot_{job_num_name}.png"
+    filename = f"completion-time-algorithms-dl/{power_for_test}_adj_job_plot_{job_num_name}.png"
     print("Saved " + filename)
     plt.savefig(filename)
