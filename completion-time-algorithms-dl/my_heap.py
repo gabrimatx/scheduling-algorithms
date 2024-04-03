@@ -84,7 +84,7 @@ class PredictionHeap(Heap):
         prediction_class.prediction = new_amount
         self.heapify(prediction_class.heap_index)
 
-    def empty_prediction_class(self, prediction_class):
+    def empty_prediction_class(self, prediction_class: PredictionClass):
         prediction_class.size_j = 0
         self.heapify(prediction_class.heap_index)
 

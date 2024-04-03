@@ -13,6 +13,7 @@ from random_job import RAND_scheduler
 from spjf import SPJF_scheduler
 from spjf_dl import DSPJF_scheduler
 from prr_optimized import PRR_scheduler
+from prr_dl import DPRR_scheduler
 from oracles import (
     GaussianPerturbationOracle,
     PerfectOracle,
@@ -86,16 +87,19 @@ class Tester:
         }
         oracle_cls = oracle_mapping[oracle_type]()
         d_oracle = DynamicJobMeanOracle()
+        d_oracle_prr = DynamicJobMeanOracle()
         training_set_slice = self.training_set[
             (len(self.training_set) * (10 - training_slice)) // 10 :
         ]
         if training_set_slice:
             oracle_cls.computePredictions(training_set_slice)
             d_oracle.computePredictions(training_set_slice)
+            d_oracle_prr.computePredictions(training_set_slice)
+
         spjf_sched, prr_sched = SPJF_scheduler(oracle_cls), PRR_scheduler(
             0.5, oracle_cls
         )
-        dspjf_sched = DSPJF_scheduler(d_oracle)
+        dspjf_sched, dprr_sched = DSPJF_scheduler(d_oracle), DPRR_scheduler(0.5, d_oracle_prr)
 
         spjf_sched.add_job_set(deepcopy(self.test_set))
         spjf_sched.run()
@@ -106,11 +110,15 @@ class Tester:
         dspjf_sched.add_job_set(deepcopy(self.test_set))
         dspjf_sched.run()
 
+        dprr_sched.add_job_set(deepcopy(self.test_set))
+        dprr_sched.run()
+
         return (
             self.rr_cr,
             spjf_sched.total_completion_time / self.sjf_tct,
             prr_sched.total_completion_time / self.sjf_tct,
             dspjf_sched.total_completion_time / self.sjf_tct,
+            dprr_sched.total_completion_time / self.sjf_tct,
             self.ljf_cr,
             self.rand_cr,
         )
@@ -144,6 +152,7 @@ if __name__ == "__main__":
         "Shortest predicted job first",
         "Preferential round robin",
         "Dynamic SPJF",
+        "Dynamic PRR",
         "Longest Job First",
         "Random scheduling",
     ]

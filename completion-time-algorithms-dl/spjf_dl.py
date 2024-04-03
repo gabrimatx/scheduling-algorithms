@@ -1,6 +1,5 @@
 from job_class import Job, JobBucket, PredictionClass
 from my_heap import PredictionHeap
-from spjf import SPJF_scheduler
 from scientific_not import sci_notation
 from tqdm import tqdm
 from oracles import DynamicJobMeanOracle

@@ -41,9 +41,18 @@ class JobBucket:
     def exec_job(self, bucket_id: int) -> Job:
         completed_job = self.buckets[bucket_id].pop()
         return completed_job
+    
+    def pop_job(self, job):
+        for ind, j in enumerate(self.buckets[job.id]):
+            if j is job:
+                return self.buckets[job.id].pop(ind)
+        raise Exception
 
     def get_duration(self, bucket_id: int) -> int:
         return self.buckets[bucket_id][-1].remaining_duration
+
+    def get_job(self, bucket_id: int) -> Job:
+        return self.buckets[bucket_id][-1]
     
-    def is_empty(self, bucket_id) -> bool:
+    def is_empty(self, bucket_id: int) -> bool:
         return len(self.buckets[bucket_id]) == 0
