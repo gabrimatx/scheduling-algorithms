@@ -1,6 +1,7 @@
 from job_class import Job, PredictionClass
 import random
 
+
 class Heap:
     def __init__(self, elements):
         self.container = []
@@ -9,7 +10,7 @@ class Heap:
             self.container.append(element)
         self.build_min_heap()
 
-    def update_indexes(self): # For debugging
+    def update_indexes(self):  # For debugging
         for index, job in enumerate(self.container):
             job.heap_index = index
 
@@ -33,7 +34,7 @@ class Heap:
         process_time = min(self.container[job_index].remaining_duration, amount)
         self.container[job_index].remaining_duration -= process_time
         self.heapify(job_index)
-    
+
     def pop_at_index(self, job_index):
         if job_index == len(self.container) - 1:
             return self.container.pop(-1)
@@ -47,20 +48,29 @@ class Heap:
         n = len(self.container)
         for index in range(n // 2 + 1, -1, -1):
             self.heapify(index)
-        
+
     def heapify(self, index):
         left_child = 2 * index + 1
         right_child = 2 * index + 2
         smallest = index
-        
-        if left_child < len(self.container) and self.container[left_child] < self.container[smallest]:
+
+        if (
+            left_child < len(self.container)
+            and self.container[left_child] < self.container[smallest]
+        ):
             smallest = left_child
-        
-        if right_child < len(self.container) and self.container[right_child] < self.container[smallest]:
+
+        if (
+            right_child < len(self.container)
+            and self.container[right_child] < self.container[smallest]
+        ):
             smallest = right_child
-        
+
         if smallest != index:
-            self.container[index], self.container[smallest] = self.container[smallest], self.container[index]
+            self.container[index], self.container[smallest] = (
+                self.container[smallest],
+                self.container[index],
+            )
             self.container[index].heap_index = index
             self.container[smallest].heap_index = smallest
             self.heapify(smallest)
@@ -69,7 +79,7 @@ class Heap:
 class PredictionHeap(Heap):
     def __init__(self, prediction_classes) -> None:
         super().__init__(prediction_classes)
-    
+
     def update_prediction(self, prediction_class, new_amount):
         prediction_class.prediction = new_amount
         self.heapify(prediction_class.heap_index)
@@ -88,57 +98,15 @@ class PredictionHeap(Heap):
             parent_index = (index - 1) // 2
             if self.container[parent_index] < self.container[index]:
                 break
-            self.container[index], self.container[parent_index] = self.container[parent_index], self.container[index]
+            self.container[index], self.container[parent_index] = (
+                self.container[parent_index],
+                self.container[index],
+            )
             self.container[index].heap_index = index
             self.container[parent_index].heap_index = parent_index
             index = parent_index
 
-    def __repr__(self):
-        if not self.container:
-            return "Heap is empty"
 
-        lines = []
-        depth = 0
-        while 2 ** depth - 1 < len(self.container):
-            start = 2 ** depth - 1
-            end = min(2 ** (depth + 1) - 1, len(self.container))
-            line = ' '.join(str(x.prediction) for x in self.container[start:end])
-            lines.append(line.center(80))
-            depth += 1
-        return '\n'.join(lines)
-    
 class HeapWithJobs(Heap):
     def __init__(self, elements) -> None:
         super().__init__(elements)
-
-    def __repr__(self):
-        if not self.container:
-            return "Heap is empty"
-
-        lines = []
-        depth = 0
-        while 2 ** depth - 1 < len(self.container):
-            start = 2 ** depth - 1
-            end = min(2 ** (depth + 1) - 1, len(self.container))
-            line = ' '.join(str(x.remaining_duration) for x in self.container[start:end])
-            lines.append(line.center(80))
-            depth += 1
-        return '\n'.join(lines)
-    
-    
-if __name__ == "__main__":
-    p_classes = [PredictionClass(i, 1, random.randint(0,19)) for i in range(20)]
-    p_classes[5].size_j = 0
-    p_classes[5].prediction = -1
-    print(p_classes)
-    p_heap = PredictionHeap(p_classes)
-    print(p_heap)
-    print(p_heap.container)
-    p_heap.update_prediction(p_classes[1], 100)
-    print(p_heap)
-    print(p_heap.container)
-    p_heap.heap_push(PredictionClass(20, 1, -1))
-    p_heap.empty_prediction_class(p_classes[8])
-    print(p_heap)
-    print(p_heap.container)
-    pass
