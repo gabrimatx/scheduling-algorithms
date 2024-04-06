@@ -7,6 +7,7 @@ from tqdm import tqdm
 from copy import deepcopy
 from job_class import Job
 from sjf import SJF_scheduler
+from ncs import NCS_scheduler
 from rr_optimized import RR_scheduler
 from ljf import LJF_scheduler
 from random_job import RAND_scheduler
@@ -21,7 +22,7 @@ from oracles import (
     JobMedianOracle,
     AugmentedMedianOracle,
     AugmentedMeanOracle,
-    DynamicJobMeanOracle
+    DynamicJobMeanOracle,
 )
 from scientific_not import sci_notation
 
@@ -78,49 +79,51 @@ class Tester:
         return big_completion_time / 10
 
     def run_simulation(self, training_slice: int, oracle_type: int) -> tuple:
-        print(f"Performing test on slice {training_slice}")
+        print(f"Performing test on slice {training_slice}...")
         oracle_mapping = {
             0: JobMeanOracle,
             1: JobMedianOracle,
             2: AugmentedMeanOracle,
             3: AugmentedMedianOracle,
+            4: DynamicJobMeanOracle,
         }
-        oracle_cls = oracle_mapping[oracle_type]()
-        d_oracle = DynamicJobMeanOracle()
-        d_oracle_prr = DynamicJobMeanOracle()
+
+        prediction_schedulers = [SPJF_scheduler(None), PRR_scheduler(0.5, None), PRR_scheduler(0.25, None), PRR_scheduler(0.75, None)] #NCS_scheduler(1, None, 10)]
+        dynamic_prediction_schedulers = [DSPJF_scheduler(None), DPRR_scheduler(0.5, None)]
+
+        s_oracle = oracle_mapping[oracle_type]()
+        dynamic_oracles = [oracle_mapping[4]() for ds in dynamic_prediction_schedulers]
+
         training_set_slice = self.training_set[
             (len(self.training_set) * (10 - training_slice)) // 10 :
         ]
+
         if training_set_slice:
-            oracle_cls.computePredictions(training_set_slice)
-            d_oracle.computePredictions(training_set_slice)
-            d_oracle_prr.computePredictions(training_set_slice)
+            s_oracle.computePredictions(training_set_slice)
+            for dynamic_oracle in dynamic_oracles:
+                dynamic_oracle.computePredictions(training_set_slice)
 
-        spjf_sched, prr_sched = SPJF_scheduler(oracle_cls), PRR_scheduler(
-            0.5, oracle_cls
-        )
-        dspjf_sched, dprr_sched = DSPJF_scheduler(d_oracle), DPRR_scheduler(0.5, d_oracle_prr)
+        for ind, scheduler in enumerate(prediction_schedulers):
+            scheduler.oracle = s_oracle
+            scheduler.add_job_set(deepcopy(self.test_set))
+            scheduler.run()
 
-        spjf_sched.add_job_set(deepcopy(self.test_set))
-        spjf_sched.run()
-
-        prr_sched.add_job_set(deepcopy(self.test_set))
-        prr_sched.run()
-
-        dspjf_sched.add_job_set(deepcopy(self.test_set))
-        dspjf_sched.run()
-
-        dprr_sched.add_job_set(deepcopy(self.test_set))
-        dprr_sched.run()
+        for ind, scheduler in enumerate(dynamic_prediction_schedulers):
+            scheduler.oracle = dynamic_oracles[ind]
+            scheduler.add_job_set(deepcopy(self.test_set))
+            scheduler.run()
 
         return (
-            self.rr_cr,
-            spjf_sched.total_completion_time / self.sjf_tct,
-            prr_sched.total_completion_time / self.sjf_tct,
-            dspjf_sched.total_completion_time / self.sjf_tct,
-            dprr_sched.total_completion_time / self.sjf_tct,
-            self.ljf_cr,
-            self.rand_cr,
+            [self.rr_cr]
+            + [
+                scheduler.total_completion_time / self.sjf_tct
+                for scheduler in prediction_schedulers
+            ]
+            + [
+                scheduler.total_completion_time / self.sjf_tct
+                for scheduler in dynamic_prediction_schedulers
+            ]
+            + [self.ljf_cr, self.rand_cr]
         )
 
 
@@ -150,7 +153,10 @@ if __name__ == "__main__":
     names = [
         "Round Robin",
         "Shortest predicted job first",
-        "Preferential round robin",
+        r"Preferential round robin $\lambda = 0.5$",
+        r"Preferential round robin $\lambda = 0.25$",
+        r"Preferential round robin $\lambda = 0.75$",
+        #r"NCS $\epsilon = 10.0$",
         "Dynamic SPJF",
         "Dynamic PRR",
         "Longest Job First",
@@ -164,7 +170,7 @@ if __name__ == "__main__":
     }
     for algo_data, name in zip(full_data, names):
         sns.lineplot(x=x_axis, y=algo_data, label=name)
-    sns.lineplot(x=x_axis, y=1, label = "Optimal")
+    sns.lineplot(x=x_axis, y=1, label="Optimal")
     plt.xlabel("Slice of the training set")
     plt.ylabel("Average Empirical Competitive Ratio")
     plt.title(

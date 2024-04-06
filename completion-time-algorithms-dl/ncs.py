@@ -3,6 +3,7 @@ from job_class import Job
 import random
 import copy
 import math
+from tqdm import tqdm
 from scientific_not import sci_notation
 import time
 
@@ -21,8 +22,12 @@ class NCS_scheduler:
     def add_job(self, job):
         self.queue.append(job)
 
+    def add_job_set(self, jobset):
+        for job in jobset:
+            self.add_job(job)
+
     def oracle_predict(self, job):
-        prediction = max(0, self.oracle.getJobPrediction(job))
+        prediction = self.oracle.getJobPrediction(job)
         job.oracle_prediction = prediction
         return prediction
 
@@ -32,26 +37,15 @@ class NCS_scheduler:
         completed_jobs = set()
         completed_S_elements = set()
         last_job_duration = 1
+        round_quantum = self.quantum
         while len(completed_S_elements) < jobs_to_finish:
             job_ind = 0
-            if self.queue:
-                remaining_sizes = [job.remaining_duration for job in [self.queue[j_ind] for j_ind in S if self.queue[j_ind].remaining_duration > 0]]
-                if remaining_sizes:
-                    minimum_round_size = min(remaining_sizes)
-                else:
-                    minimum_round_size = 0
-                    
-                if minimum_round_size > self.quantum:
-                    round_quantum = ((minimum_round_size) // self.quantum) * self.quantum
-                else:
-                    round_quantum = self.quantum
-            round_quantum = self.quantum
             while job_ind < len(S):
                 if S[job_ind] in completed_jobs:
                     completed_S_elements.add(job_ind)
                     job_ind += 1
                     continue
-                if round_quantum >= self.queue[S[job_ind]].remaining_duration:
+                elif round_quantum >= self.queue[S[job_ind]].remaining_duration:
                     last_job_duration = self.queue[S[job_ind]].remaining_duration
                     self.current_time += last_job_duration
                     self.total_completion_time += self.current_time
@@ -67,53 +61,59 @@ class NCS_scheduler:
         return last_job_duration
 
     def error_estimator(self, estimated_median_k):
-        Q = [(J, J) for J in self.queue]
+        Q = [(J, J) for J in range(len(self.queue))]
         for job_index in range(len(self.queue)):
             for second_job_index in range(job_index):
-                Q += [tuple([self.queue[second_job_index], self.queue[job_index]])]
+                Q += [tuple([second_job_index, job_index])]
         if not Q:
             return 0
         P = random.choices(Q, k = math.ceil((1 / (self.epsilon ** 2)) * math.log10(self.n)))
-        sum_of_estimations = 0
         median_time_running = (1 + self.epsilon) * estimated_median_k
+        d_list = []
+        completed_jobs = set()
         for job_pair in P:
-            # running simulation is avoided to speed up the metric estimation 
-            d_k_j = abs(min(median_time_running, job_pair[1].remaining_duration) - min(median_time_running, job_pair[1].oracle_prediction - (job_pair[1].real_duration - job_pair[1].remaining_duration)))
-            d_k_i = abs(min(median_time_running, job_pair[0].remaining_duration) - min(median_time_running, job_pair[0].oracle_prediction - (job_pair[0].real_duration - job_pair[0].remaining_duration)))
-            sum_of_estimations += min(d_k_i, d_k_j)
-        return sum_of_estimations * len(Q) / len(P)
+            # running simulation is avoided to speed up the metric estimation
+            min_d = float('inf')
+            for j_ind in job_pair:
+                d_k = abs(min(median_time_running, self.queue[j_ind].remaining_duration) - min(median_time_running, max(self.queue[j_ind].oracle_prediction - (self.queue[j_ind].real_duration - self.queue[j_ind].remaining_duration), 0)))
+                if median_time_running >= self.queue[j_ind].remaining_duration and j_ind not in completed_jobs:
+                    self.current_time += self.queue[j_ind].remaining_duration
+                    self.total_completion_time += self.current_time
+                    self.queue[j_ind].remaining_duration = 0
+                    completed_jobs.add(j_ind)
+                elif j_ind not in completed_jobs:
+                    self.current_time += median_time_running
+                    self.queue[j_ind].remaining_duration -= median_time_running
+                min_d = min(d_k, min_d)
+            d_list.append(min_d)
+        for finished_job in sorted(list(completed_jobs), reverse=True):
+            self.queue.pop(finished_job)
+        return sum(d_list) * len(Q) / len(P)
 
     def run(self):
         self.n = len(self.queue)
         self.queue.sort(key = lambda j: self.oracle_predict(j))
-        greedy_completed_moves = 0
-        round_robin_rounds = 0
-        time_in_median = 0
-        time_in_error = 0
-
+        total_length = len(self.queue)
+        pbar = tqdm(total=total_length, desc="Processing NCS...")
         while len(self.queue) > math.ceil(1 / (self.epsilon**3) * math.log10(self.n)):
+            pbar.update(total_length - len(self.queue))
+            total_length -= total_length - len(self.queue)
             self.k += 1
-            m_b = time.time()
             round_median = self.median_estimator()
-            m_a = time.time()
             round_error = self.error_estimator(round_median)
-            e_a = time.time()
 
-            time_in_median += m_a - m_b
-            time_in_error += e_a - m_a
             if round_error >= (self.delta**2 * self.epsilon * round_median * len(self.queue)**2) / 16:
                 # Big error, run round robin for 2*round_median
-                round_robin_rounds += 1
                 job_ind = 0
                 while job_ind < len(self.queue):
                     if self.queue[job_ind].remaining_duration > 2 * round_median:
                         self.queue[job_ind].remaining_duration -= 2 * round_median
                         self.current_time += 2 * round_median
+                        job_ind += 1
                     else:
                         self.current_time += self.queue[job_ind].remaining_duration
                         self.queue.pop(job_ind)
                         self.total_completion_time += self.current_time
-                        job_ind += 1
             else:
                 # Small error, greedy approach
                 self.queue.sort(key = lambda x: x.oracle_prediction - (x.real_duration - x.remaining_duration)) 
@@ -121,7 +121,6 @@ class NCS_scheduler:
                 while job_ind < len(self.queue):
                     remaining_time_estimate = max(0, self.queue[job_ind].oracle_prediction - (self.queue[job_ind].real_duration - self.queue[job_ind].remaining_duration))
                     if remaining_time_estimate <= (1 + self.epsilon) * round_median:
-                        greedy_completed_moves += 1
                         if self.queue[job_ind].remaining_duration <= remaining_time_estimate + 3*self.epsilon*round_median:
                             self.current_time += self.queue[job_ind].remaining_duration
                             self.queue.pop(job_ind)
@@ -132,37 +131,25 @@ class NCS_scheduler:
                             job_ind += 1
                     else:
                         break
-
+        pbar.update(total_length - len(self.queue))
+        total_length -= total_length - len(self.queue)
         while self.queue:
             job_ind = 0
             queue_size = len(self.queue)
             while job_ind < queue_size:
                 if self.quantum >= self.queue[job_ind].remaining_duration:
                     self.current_time += (self.queue.pop(job_ind)).remaining_duration
+                    pbar.update(1)
                     self.total_completion_time += self.current_time
                     queue_size -= 1
                 else:
                     self.current_time += self.quantum
                     self.queue[job_ind].remaining_duration -= self.quantum
                     job_ind += 1
-
+        pbar.close()
 
     def display_jobs(self):
         print("Current Jobs in Queue:")
         for job in self.queue:
             print(job)
 
-
-if __name__ == '__main__':
-    
-    numjobs = int(input("Insert number of jobs to process: "))
-    oracle = JobMeanOracle()
-    scheduler = NCS_scheduler(100, oracle, 10)
-    filename = r"task_lines.txt"
-    with open(filename, "r") as f:
-        for i in range(numjobs):
-            a = [int(x) for x in f.readline().split(",")]
-            scheduler.add_job(Job(a[1], a[0]//1000000, a[2]//1000000))
-    # Running the scheduler
-    scheduler.run()
-    print(f"total_completion_time: {sci_notation(scheduler.total_completion_time)}")

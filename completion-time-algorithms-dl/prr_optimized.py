@@ -43,7 +43,7 @@ class PRR_scheduler:
         ):
             job.queue_index = index
 
-        with tqdm(total=len(self.queue), desc="Processing (prr)...") as pbar:
+        with tqdm(total=len(self.queue), desc=f"Processing (prr lambda = {self.hyperLambda})...") as pbar:
             while len(self.queue) > completed_count:
                 remaining_jobs = max(len(self.queue) - completed_count, 1)
                 while completed_jobs[spjf_index]:
