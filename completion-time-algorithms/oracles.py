@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from job_class import Job
+from job_class import Job, PredictionClass
 import numpy as np
 from scipy.optimize import curve_fit
 from scipy.stats import gaussian_kde, powerlaw, pareto, ks_2samp, anderson
@@ -115,6 +115,29 @@ class JobMeanOracle:
             self.totalMean += job.real_duration
             self.totalJobOccurrences += 1
 
+class DynamicJobMeanOracle(JobMeanOracle):
+    def __init__(self):
+        super().__init__()
+    
+    def computePredictionClasses(self, JobSet) -> list:
+        d = {}
+        for job in JobSet:
+            if job.id in d:
+                d[job.id].size_j += 1
+            else:
+                d[job.id] = PredictionClass(job.id, 1, self.getJobPrediction(job))
+        return list(d.values())
+    
+    def updatePrediction(self, job, P_heap, P_class):
+        if job.id in self.jobTotals:
+            self.jobTotals[job.id] += job.real_duration
+            self.jobOccurrences[job.id] += 1
+        else:
+            self.jobTotals[job.id] = job.real_duration
+            self.jobOccurrences[job.id] = 1
+        P_heap.update_prediction(P_class, self.jobTotals[job.id] / self.jobOccurrences[job.id])
+        self.totalMean += job.real_duration
+        self.totalJobOccurrences += 1
 
 class JobMedianOracle:
     def __init__(self):
@@ -161,12 +184,7 @@ class GaussianPerturbationOracle:
         return Job.real_duration + np.random.normal(self.mean, self.std_dev, 1)[0]
 
 if __name__ == "__main__":
-    a = AugmentedMedianOracle()
-    h = [Job(0, 0, i + 200) for i in (np.random.pareto(a = 17, size = 100000) * 10000)]
+    a = DynamicJobMeanOracle()
+    h = [Job(i % 2, 0, i + 200) for i in range(20)]
     a.computePredictions(h)
-    print(a.getJobPrediction(Job(1, 0, 0)))
-    print(a.getJobPrediction(Job(0, 0, 0)))
-    print(a.getJobPrediction(Job(1, 0, 0)))
-    print(a.getJobPrediction(Job(0, 0, 0)))
-    print(a.getJobPrediction(Job(2, 0, 0)))
-    print(np.mean([i.remaining_duration for i in h]))
+    print(a.computePredictionClasses())

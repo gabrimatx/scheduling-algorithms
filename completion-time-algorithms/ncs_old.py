@@ -6,13 +6,15 @@ import math
 from tqdm import tqdm
 from scientific_not import sci_notation
 import time
-random.seed(20)
+
 class NCS_scheduler:
-    def __init__(self, oracle, epsilon):
+    def __init__(self, time_quantum, oracle, epsilon):
         self.queue = []
         self.total_completion_time = 0
+        self.k = 0
         self.delta = 1/50
         self.epsilon = epsilon
+        self.quantum = time_quantum
         self.n = 0
         self.current_time = 0
         self.oracle = oracle
@@ -31,36 +33,33 @@ class NCS_scheduler:
 
     def median_estimator(self):
         S = random.choices([i for i in range(len(self.queue))], k = math.ceil(math.log(2 * self.n) / (self.delta**2)))
-        occurrences = {}
-        for index in S:
-            occurrences[index] = occurrences.get(index, 0) + 1
-        completion_order = sorted(list(occurrences.keys()), key=lambda x: self.queue[x].remaining_duration / occurrences[x])
-        jobs_to_finish = len(S) // 2
-        finished_jobs = 0
-        index = 0
-        processing_time = 0
-        # Simulate a round robin with continuous time, improve performance
-        while finished_jobs < jobs_to_finish:
-            job_index = completion_order[index]
-            job_occurrences, job = occurrences[job_index], self.queue[job_index]
-            processing_time += (job.remaining_duration - (processing_time * job_occurrences)) / job_occurrences
-            self.current_time += processing_time * (len(S) - finished_jobs)
-            self.total_completion_time += self.current_time
-            finished_jobs += job_occurrences
-            index += 1
-        
-        median_est = job.remaining_duration
-        completed_jobs, uncomplete_jobs = completion_order[:index], completion_order[index:]
+        jobs_to_finish = len(S) // 2 
+        completed_jobs = set()
+        completed_S_elements = set()
+        last_job_duration = 1
+        round_quantum = self.quantum
+        while len(completed_S_elements) < jobs_to_finish:
+            job_ind = 0
+            while job_ind < len(S):
+                if S[job_ind] in completed_jobs:
+                    completed_S_elements.add(job_ind)
+                    job_ind += 1
+                    continue
+                elif round_quantum >= self.queue[S[job_ind]].remaining_duration:
+                    last_job_duration = self.queue[S[job_ind]].remaining_duration
+                    self.current_time += last_job_duration
+                    self.total_completion_time += self.current_time
+                    self.queue[S[job_ind]].remaining_duration = 0
+                    completed_jobs.add(S[job_ind])
+                    completed_S_elements.add(job_ind)
+                else:
+                    self.queue[S[job_ind]].remaining_duration -= round_quantum
+                    self.current_time += round_quantum
+                job_ind += 1
+        for finished_job in sorted(list(completed_jobs), reverse=True):
+            self.queue.pop(finished_job)
+        return last_job_duration
 
-        for job_index in uncomplete_jobs:
-            job = self.queue[job_index]
-            job.remaining_duration -= processing_time * occurrences[job_index]
-            
-        for job_index in sorted(completed_jobs, reverse=True):
-            self.queue.pop(job_index)
-        
-        return median_est
-        
     def error_estimator(self, estimated_median_k):
         Q = [(J, J) for J in range(len(self.queue))]
         for job_index in range(len(self.queue)):
@@ -99,8 +98,10 @@ class NCS_scheduler:
         while len(self.queue) > math.ceil(1 / (self.epsilon**3) * math.log10(self.n)):
             pbar.update(total_length - len(self.queue))
             total_length -= total_length - len(self.queue)
+            self.k += 1
             round_median = self.median_estimator()
             round_error = self.error_estimator(round_median)
+
             if round_error >= (self.delta**2 * self.epsilon * round_median * len(self.queue)**2) / 16:
                 # Big error, run round robin for 2*round_median
                 job_ind = 0
@@ -115,6 +116,7 @@ class NCS_scheduler:
                         self.total_completion_time += self.current_time
             else:
                 # Small error, greedy approach
+                self.queue.sort(key = lambda x: x.oracle_prediction - (x.real_duration - x.remaining_duration)) 
                 job_ind = 0
                 while job_ind < len(self.queue):
                     remaining_time_estimate = max(0, self.queue[job_ind].oracle_prediction - (self.queue[job_ind].real_duration - self.queue[job_ind].remaining_duration))
@@ -130,16 +132,20 @@ class NCS_scheduler:
                     else:
                         break
         pbar.update(total_length - len(self.queue))
-        self.queue.sort()
-        min_index = 0
-        processed_time = 0
-        while min_index < len(self.queue):
-            time_to_pass = self.queue[min_index].remaining_duration - processed_time
-            processed_time += time_to_pass
-            self.current_time += time_to_pass * (len(self.queue) - min_index)
-            self.total_completion_time += self.current_time
-            min_index += 1
-            pbar.update(1)
+        total_length -= total_length - len(self.queue)
+        while self.queue:
+            job_ind = 0
+            queue_size = len(self.queue)
+            while job_ind < queue_size:
+                if self.quantum >= self.queue[job_ind].remaining_duration:
+                    self.current_time += (self.queue.pop(job_ind)).remaining_duration
+                    pbar.update(1)
+                    self.total_completion_time += self.current_time
+                    queue_size -= 1
+                else:
+                    self.current_time += self.quantum
+                    self.queue[job_ind].remaining_duration -= self.quantum
+                    job_ind += 1
         pbar.close()
 
     def display_jobs(self):

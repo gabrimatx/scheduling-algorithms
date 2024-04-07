@@ -1,7 +1,7 @@
 from oracles import *
 from job_class import Job
 from scientific_not import sci_notation
-from my_heap import heap
+from my_heap import HeapWithJobs
 from tqdm import tqdm
 import time
 
@@ -28,7 +28,7 @@ class PRR_scheduler:
 
     def run(self):
         current_time = 0
-        min_job_heap = heap(self.queue)
+        min_job_heap = HeapWithJobs(self.queue)
         self.queue.sort(key=lambda j: self.sort_and_add_error(j))
         round_robin_processed_time = 0
         completed_jobs = [False for job in self.queue]
@@ -43,7 +43,7 @@ class PRR_scheduler:
         ):
             job.queue_index = index
 
-        with tqdm(total=len(self.queue), desc="Processing (prr)...") as pbar:
+        with tqdm(total=len(self.queue), desc=f"Processing (prr lambda = {self.hyperLambda})...") as pbar:
             while len(self.queue) > completed_count:
                 remaining_jobs = max(len(self.queue) - completed_count, 1)
                 while completed_jobs[spjf_index]:
