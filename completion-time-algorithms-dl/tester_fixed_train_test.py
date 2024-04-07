@@ -88,7 +88,7 @@ class Tester:
             4: DynamicJobMeanOracle,
         }
 
-        prediction_schedulers = [SPJF_scheduler(None), PRR_scheduler(0.5, None), PRR_scheduler(0.25, None), PRR_scheduler(0.75, None)] #NCS_scheduler(1, None, 10)]
+        prediction_schedulers = [SPJF_scheduler(None), PRR_scheduler(0.5, None), PRR_scheduler(0.25, None), PRR_scheduler(0.75, None), NCS_scheduler(None, 10)] 
         dynamic_prediction_schedulers = [DSPJF_scheduler(None), DPRR_scheduler(0.5, None)]
 
         s_oracle = oracle_mapping[oracle_type]()
@@ -156,7 +156,7 @@ if __name__ == "__main__":
         r"Preferential round robin $\lambda = 0.5$",
         r"Preferential round robin $\lambda = 0.25$",
         r"Preferential round robin $\lambda = 0.75$",
-        #r"NCS $\epsilon = 10.0$",
+        r"NCS $\epsilon = 10.0$",
         "Dynamic SPJF",
         "Dynamic PRR",
         "Longest Job First",
@@ -177,7 +177,7 @@ if __name__ == "__main__":
         f"Competitive ratios with job means predictions: Training_size = 10^{power_for_test + 1} | Testing_size = 5 * 10^{power_for_test}"
     )
     plt.xticks(rotation=45)
-    plt.ylim(0, 10)
+    plt.ylim(0, 4.5)
     plt.grid(True)
     plt.legend()
     oracle_type_name = [
