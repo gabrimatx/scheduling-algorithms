@@ -6,15 +6,11 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from copy import deepcopy
 from job_class import Job
-from sjf import SJF_scheduler
+from scheduler_sjf import SJF_scheduler, DSPJF_scheduler, SPJF_scheduler
 from ncs import NCS_scheduler
-from rr_optimized import RR_scheduler
-from ljf import LJF_scheduler
-from random_job import RAND_scheduler
-from spjf import SPJF_scheduler
-from spjf_dl import DSPJF_scheduler
-from prr_optimized import PRR_scheduler
-from prr_dl import DPRR_scheduler
+from scheduler_rr import *
+from scheduler_others import *
+from scheduler_prr import *
 from oracles import (
     GaussianPerturbationOracle,
     PerfectOracle,
@@ -24,7 +20,6 @@ from oracles import (
     AugmentedMeanOracle,
     DynamicJobMeanOracle,
 )
-from scientific_not import sci_notation
 
 np.random.seed(27)
 
@@ -78,21 +73,23 @@ class Tester:
             rand_scheduler.queue = []
         return big_completion_time / 10
 
-    def run_simulation(self, training_slice: int, oracle_type: int) -> tuple:
+    def run_simulation(self, training_slice: int) -> tuple:
         print(f"Performing test on slice {training_slice}...")
-        oracle_mapping = {
-            0: JobMeanOracle,
-            1: JobMedianOracle,
-            2: AugmentedMeanOracle,
-            3: AugmentedMedianOracle,
-            4: DynamicJobMeanOracle,
-        }
 
-        prediction_schedulers = [SPJF_scheduler(None), PRR_scheduler(0.5, None), PRR_scheduler(0.25, None), PRR_scheduler(0.75, None), NCS_scheduler(None, 10)] 
-        dynamic_prediction_schedulers = [DSPJF_scheduler(None), DPRR_scheduler(0.5, None)]
+        prediction_schedulers = [
+            SPJF_scheduler(None),
+            PRR_scheduler(0.5, None),
+            PRR_scheduler(0.25, None),
+            PRR_scheduler(0.75, None),
+        ]
 
-        s_oracle = oracle_mapping[oracle_type]()
-        dynamic_oracles = [oracle_mapping[4]() for ds in dynamic_prediction_schedulers]
+        dynamic_prediction_schedulers = [
+            DSPJF_scheduler(None),
+            DPRR_scheduler(0.5, None),
+        ]
+
+        s_oracle = JobMeanOracle()
+        dynamic_oracles = [DynamicJobMeanOracle() for ds in dynamic_prediction_schedulers]
 
         training_set_slice = self.training_set[
             (len(self.training_set) * (10 - training_slice)) // 10 :
@@ -128,22 +125,13 @@ class Tester:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Please provide integer arguments.")
-        sys.exit(1)
-    try:
-        power_for_test = int(sys.argv[1])
-        oracle_type = int(sys.argv[2])
-    except ValueError:
-        print("Invalid integer argument provided.")
-        sys.exit(1)
+    training_size = 10**5 * 2
+    test_size = 10**5
 
-    tester = Tester(
-        10 ** (power_for_test + 1), 5 * 10**power_for_test, "complete_jobset.csv"
-    )
+    tester = Tester(training_size, test_size, "complete_jobset.csv")
 
     slices = list(range(11))
-    results = [tester.run_simulation(slice_val, oracle_type) for slice_val in slices]
+    results = [tester.run_simulation(slice_val) for slice_val in slices]
 
     full_data = list(zip(*results))
 
@@ -156,41 +144,23 @@ if __name__ == "__main__":
         r"Preferential round robin $\lambda = 0.5$",
         r"Preferential round robin $\lambda = 0.25$",
         r"Preferential round robin $\lambda = 0.75$",
-        r"NCS $\epsilon = 10.0$",
         "Dynamic SPJF",
         "Dynamic PRR",
         "Longest Job First",
         "Random scheduling",
     ]
-    oracle_mapping = {
-        0: JobMeanOracle,
-        1: JobMedianOracle,
-        2: AugmentedMeanOracle,
-        3: AugmentedMedianOracle,
-    }
+
     for algo_data, name in zip(full_data, names):
         sns.lineplot(x=x_axis, y=algo_data, label=name)
     sns.lineplot(x=x_axis, y=1, label="Optimal")
     plt.xlabel("Slice of the training set")
     plt.ylabel("Average Empirical Competitive Ratio")
-    plt.title(
-        f"Competitive ratios with job means predictions: Training_size = 10^{power_for_test + 1} | Testing_size = 5 * 10^{power_for_test}"
-    )
+    plt.title(f"Competitive ratios with job means predictions")
     plt.xticks(rotation=45)
     plt.ylim(0, 4.5)
     plt.grid(True)
     plt.legend()
-    oracle_type_name = [
-        "google-mean-oracle",
-        "google-median-oracle",
-        "google-augmented_mean-oracle",
-        "google-augmented_median-oracle",
-    ]
-    job_num_name = (
-        f"{15 * 10 ** (power_for_test - 6)}M"
-        if power_for_test >= 6
-        else f"{15 * 10 ** (power_for_test - 3)}k"
-    )
-    filename = f"completion-time-algorithms-dl/plots/{oracle_type_name[oracle_type]}/{power_for_test}_{oracle_mapping[oracle_type].__name__}_{job_num_name}.png"
+
+    filename = f"new_name.png"
     print("Saved " + filename)
     plt.savefig(filename)

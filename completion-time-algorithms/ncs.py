@@ -4,7 +4,6 @@ import random
 import copy
 import math
 from tqdm import tqdm
-from scientific_not import sci_notation
 import time
 random.seed(20)
 class NCS_scheduler:
