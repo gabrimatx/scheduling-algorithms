@@ -12,19 +12,17 @@ class RAND_scheduler(Scheduler):
         self.queue.append(job)
 
     def run(self):
-        current_time = 0
         random.shuffle(self.queue)
         for i in tqdm(range(len(self.queue)), "Processing (rand)..."):
             job = self.queue[i]
-            current_time += job.remaining_duration
-            self.total_completion_time += current_time
+            self.current_time += job.remaining_duration
+            self.total_completion_time += self.current_time
 
 
 class LJF_scheduler(Scheduler):
     def run(self):
-        current_time = 0
         self.queue.sort(reverse=True)
         for i in tqdm(range(len(self.queue)), "Processing (ljf)..."):
             job = self.queue[i]
-            current_time += job.remaining_duration
-            self.total_completion_time += current_time
+            self.current_time += job.remaining_duration
+            self.total_completion_time += self.current_time

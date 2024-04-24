@@ -2,6 +2,8 @@ class Scheduler:
     def __init__(self):
         self.queue = []
         self.total_completion_time = 0
+        self.current_time = 0
+        self.set_name()
 
     def add_job_set(self, jobset):
         for job in jobset:
@@ -16,5 +18,11 @@ class Scheduler:
             print(job)
 
     def sort_jobs(self, job):
-        prediction = self.oracle.getJobPrediction(job)
+        prediction = max(self.oracle.getJobPrediction(job), 0)
+        job.prediction = prediction
         return prediction
+    
+    def set_name(self):
+        self.name = self.__class__.__name__
+        if self.name in ("PRR_scheduler", "DPRR_scheduler"):
+            self.name += " $\lambda$ = " + str(self.hyperLambda)

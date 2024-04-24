@@ -6,7 +6,6 @@ class RR_scheduler(Scheduler):
         super().__init__()
 
     def run(self):
-        current_time = 0
         processed_time = 0
         ordered_jobs = sorted(self.queue)
         min_index = 0
@@ -16,8 +15,8 @@ class RR_scheduler(Scheduler):
                     ordered_jobs[min_index].remaining_duration - processed_time
                 )
                 processed_time += time_to_pass
-                current_time += time_to_pass * (len(ordered_jobs) - min_index)
-                self.total_completion_time += current_time
+                self.current_time += time_to_pass * (len(ordered_jobs) - min_index)
+                self.total_completion_time += self.current_time
                 min_index += 1
                 pbar.update(1)
 
@@ -34,7 +33,6 @@ class RR_naive_scheduler(Scheduler):
         return round_quantum
 
     def run(self):
-        current_time = 0
         ordered_jobs = sorted(self.queue)
         min_index = 0
         round_quantum = self.compute_round_quantum(ordered_jobs, min_index)
@@ -51,12 +49,12 @@ class RR_naive_scheduler(Scheduler):
                     continue
 
                 if round_quantum >= self.queue[job_ind].remaining_duration:
-                    current_time += self.queue[job_ind].remaining_duration
+                    self.current_time += self.queue[job_ind].remaining_duration
                     self.queue[job_ind].remaining_duration = 0
                     pbar.update(1)
-                    self.total_completion_time += current_time
+                    self.total_completion_time += self.current_time
                     min_index += 1
                 else:
-                    current_time += round_quantum
+                    self.current_time += round_quantum
                     self.queue[job_ind].remaining_duration -= round_quantum
                     job_ind += 1

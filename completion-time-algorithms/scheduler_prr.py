@@ -6,12 +6,11 @@ from my_heap import PredictionHeap
 
 class PRR_scheduler(Scheduler):
     def __init__(self, lambda_parameter, oracle):
-        super().__init__()
         self.hyperLambda = lambda_parameter
+        super().__init__()
         self.oracle = oracle
 
     def run(self):
-        current_time = 0
         min_job_heap = HeapWithJobs(self.queue)
         self.queue.sort(key=lambda j: self.sort_jobs(j))
         round_robin_processed_time = 0
@@ -46,8 +45,8 @@ class PRR_scheduler(Scheduler):
                         time_for_rr / remaining_jobs
                     ) * rounds_to_complete
                     round_robin_processed_time += processing_time
-                    current_time += rounds_to_complete
-                    self.total_completion_time += current_time
+                    self.current_time += rounds_to_complete
+                    self.total_completion_time += self.current_time
 
                     completed_jobs[spjf_index] = True
                     completed_count += 1
@@ -72,8 +71,8 @@ class PRR_scheduler(Scheduler):
                         ) * rounds_to_complete_predicted
 
                         round_robin_processed_time += processing_time
-                        current_time += rounds_to_complete_predicted
-                        self.total_completion_time += current_time
+                        self.current_time += rounds_to_complete_predicted
+                        self.total_completion_time += self.current_time
 
                         completed_jobs[spjf_index] = True
                         completed_count += 1
@@ -93,8 +92,8 @@ class PRR_scheduler(Scheduler):
                         ) * rounds_to_complete_smallest
 
                         round_robin_processed_time += processing_time
-                        current_time += rounds_to_complete_smallest
-                        self.total_completion_time += current_time
+                        self.current_time += rounds_to_complete_smallest
+                        self.total_completion_time += self.current_time
 
                         completed_jobs[completed_job.queue_index] = True
                         completed_count += 1
@@ -108,12 +107,11 @@ class PRR_scheduler(Scheduler):
 
 class DPRR_scheduler(Scheduler):
     def __init__(self, lambda_parameter, oracle):
-        super().__init__()
         self.hyperLambda = lambda_parameter
+        super().__init__()
         self.oracle = oracle
 
     def run(self):
-        current_time = 0
 
         min_job_heap = HeapWithJobs(self.queue)
 
@@ -150,8 +148,8 @@ class DPRR_scheduler(Scheduler):
                     ) * rounds_to_complete
 
                     round_robin_processed_time += processing_time
-                    current_time += rounds_to_complete
-                    self.total_completion_time += current_time
+                    self.current_time += rounds_to_complete
+                    self.total_completion_time += self.current_time
 
                     completed_count += 1
 
@@ -185,8 +183,8 @@ class DPRR_scheduler(Scheduler):
                         ) * rounds_to_complete_predicted
 
                         round_robin_processed_time += processing_time
-                        current_time += rounds_to_complete_predicted
-                        self.total_completion_time += current_time
+                        self.current_time += rounds_to_complete_predicted
+                        self.total_completion_time += self.current_time
 
                         completed_count += 1
 
@@ -216,8 +214,8 @@ class DPRR_scheduler(Scheduler):
                         ) * rounds_to_complete_smallest
 
                         round_robin_processed_time += processing_time
-                        current_time += rounds_to_complete_smallest
-                        self.total_completion_time += current_time
+                        self.current_time += rounds_to_complete_smallest
+                        self.total_completion_time += self.current_time
 
                         completed_count += 1
 
@@ -252,7 +250,6 @@ class PRR_naive_scheduler(Scheduler):
         self.oracle = oracle
 
     def run(self):
-        current_time = 0
         self.queue.sort(key=lambda j: self.sort_jobs(j))
         while self.queue:
             time_for_rr = self.round_time * self.hyperLambda
@@ -261,12 +258,12 @@ class PRR_naive_scheduler(Scheduler):
 
             while time_for_spjf and self.queue:
                 if self.queue[0].remaining_duration <= time_for_spjf:
-                    current_time += self.queue[0].remaining_duration
+                    self.current_time += self.queue[0].remaining_duration
                     time_for_spjf -= self.queue[0].remaining_duration
                     self.queue = self.queue[1:]
-                    self.total_completion_time += current_time
+                    self.total_completion_time += self.current_time
                 else:
-                    current_time += time_for_spjf
+                    self.current_time += time_for_spjf
                     self.queue[0].remaining_duration -= time_for_spjf
                     time_for_spjf = 0
 
@@ -280,12 +277,12 @@ class PRR_naive_scheduler(Scheduler):
                 if self.queue[rr_index].remaining_duration <= min(
                     time_for_rr, round_quantum
                 ):
-                    current_time += self.queue[rr_index].remaining_duration
+                    self.current_time += self.queue[rr_index].remaining_duration
                     time_for_rr -= self.queue[rr_index].remaining_duration
                     self.queue.pop(rr_index)
-                    self.total_completion_time += current_time
+                    self.total_completion_time += self.current_time
                 else:
-                    current_time += min(time_for_rr, round_quantum)
+                    self.current_time += min(time_for_rr, round_quantum)
                     time_for_rr -= min(time_for_rr, round_quantum)
                     self.queue[rr_index].remaining_duration -= min(
                         time_for_rr, round_quantum

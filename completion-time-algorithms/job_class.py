@@ -4,7 +4,7 @@ class Job:
         self.arrival_time = arrival_time
         self.real_duration = real_duration
         self.remaining_duration = real_duration
-        self.oracle_prediction = -1
+        self.prediction = 0
         self.heap_index = heap_index
         self.queue_index = queue_index
         
