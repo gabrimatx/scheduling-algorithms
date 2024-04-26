@@ -26,3 +26,5 @@ class Scheduler:
         self.name = self.__class__.__name__
         if self.name in ("PRR_scheduler", "DPRR_scheduler"):
             self.name += " $\lambda$ = " + str(self.hyperLambda)
+        elif self.name in ("NCS_scheduler"):
+            self.name += " $\epsilon$ = " + str(self.epsilon)

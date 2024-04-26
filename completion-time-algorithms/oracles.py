@@ -36,6 +36,25 @@ class JobMeanOracle:
             self.totalMean += job.real_duration
             self.totalJobOccurrences += 1
 
+class LambdaUpdaterNaive:
+    def __init__(self) -> None:
+        self.max_job_size = 0
+        self.executed_jobs = 0
+        self.bad_ordered_jobs = 0
+    
+    def update_error(self, job):
+        if job.real_duration < self.max_job_size:
+            self.bad_ordered_jobs += 1
+        else:
+            self.max_job_size = job.real_duration        
+        self.executed_jobs += 1
+
+    def update_lambda(self):
+        if self.executed_jobs > 0:
+            return max(self.bad_ordered_jobs / self.executed_jobs, 0.01)
+        else:
+            return 0.5
+        
 class DynamicJobMeanOracle(JobMeanOracle):
     def __init__(self):
         super().__init__()

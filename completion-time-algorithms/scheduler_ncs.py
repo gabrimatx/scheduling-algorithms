@@ -4,12 +4,13 @@ from scheduler_rr import RR_scheduler
 from random import choices
 from collections import defaultdict
 from tqdm import tqdm
+from copy import deepcopy
 
 class NCS_scheduler(Scheduler):
     def __init__(self, oracle, epsilon):
+        self.epsilon = epsilon
         super().__init__()
         self.jobs = []
-        self.epsilon = epsilon
         self.oracle = oracle
 
     def add_job_set(self, jobset):
@@ -104,6 +105,17 @@ class NCS_scheduler(Scheduler):
         return len(indices) * d_sum / sample_size
 
     def run(self):
+        true_jobs = deepcopy(self.jobs)
+        true_queue = deepcopy(self.queue)
+        for i in range(10):
+            print(f"Running NCS randomly #{i}")
+            self.current_time = 0
+            self.jobs = deepcopy(true_jobs)
+            self.queue = deepcopy(true_queue)
+            self.random_run()
+        self.total_completion_time /= 10
+
+    def random_run(self):
         round = 1
         n = len(self.queue)
         self.queue.sort(key=lambda x: self.sort_jobs(x))
@@ -126,6 +138,7 @@ class NCS_scheduler(Scheduler):
             else:
                 # Small error, greedy approach
                 idx = 0
+                print("Ciao")
                 self.queue.sort(key=lambda x: self.jobs[x].prediction)
                 while idx < len(self.queue):
                     if self.jobs[self.queue[idx]].prediction <= (1 + self.epsilon) * median_k:

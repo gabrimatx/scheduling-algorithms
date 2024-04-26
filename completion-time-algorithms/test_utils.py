@@ -9,18 +9,18 @@ from scheduler_sjf import SJF_scheduler
 from collections import defaultdict
 
 class DataLoader:
-    def __init__(self, filename: str, training_size: int, test_size: int) -> None:
+    def __init__(self, filename: str, training_size: int, test_size: int, normalizer: int) -> None:
         self.filename = filename
         self.training_size = training_size
         self.test_size = test_size
         self.training_set = []
         self.test_set = []
-        self.load_data()
+        self.load_data(normalizer)
     
-    def load_data(self):
+    def load_data(self, norm):
         data = pd.read_csv(self.filename, nrows=self.training_size + self.test_size)
         for idx, row in tqdm(data.iterrows(), total=len(data), desc="Parsing jobs from dataset"):
-            job = Job(row["job_id"], row["arrival_time"] / 10**6, row["job_size"] / 10**6)
+            job = Job(row["job_id"], row["arrival_time"] / (10 ** norm), row["job_size"]  / (10 ** norm))
             if idx < self.training_size:
                 self.training_set.append(job)
             else:
@@ -100,10 +100,9 @@ class Tester:
             self.experiment.setup_schedulers(self.data_loader.training_set, slice, self.data_loader.test_set)
             self.experiment.run_experiment(self.results, self.sjf_tct)
 
-    def make_plot(self, filename = "plot.pdf"):
+    def make_plot(self, filename = "plot.pdf", dataset_name = ""):
         df = pd.DataFrame(self.results)
         plt.figure(figsize=(15, 9))
-        plt.ylim((1, 4))
         x_ind = 1
         for col in df.columns:
             plt.plot(df.index, df[col], marker='', label=col)
@@ -113,7 +112,7 @@ class Tester:
         plt.xticks(range(11), range(11))  
         plt.xlabel('Training set slices')
         plt.ylabel('Competitive ratio')
-        plt.title(f'Job scheduling on real dataset, sizes: Test = {self.data_loader.test_size} | Train = {self.data_loader.training_size}')
+        plt.title(f'Scheduling on {dataset_name}, sizes: Test = {self.data_loader.test_size} | Train = {self.data_loader.training_size}')
         plt.grid(visible=True)
         plt.savefig(filename)
 

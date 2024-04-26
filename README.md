@@ -1,5 +1,12 @@
 # Scheduling algorithms
-Implementation of different scheduling algorithms for the problem of completion time and flowtime. Cleaning scripts for the [google cluster](https://github.com/google/cluster-data) are included.  
+Implementation of different scheduling algorithms for the problem of total completion time.
+# Datasets
+The datasets that have been used for the project are the following:
+  - Google cluster trace (Around 17M Jobs)
+  - DAS2 (Around 1.1M Jobs)
+  - Grid5000 (Around 770k Jobs)
+  - SHARCNet (Around 180k Jobs)
+  - AuverGrid (Around 330k Jobs)
 # References
 <div class="csl-bib-body" style="line-height: 1.35; ">
   <div class="csl-entry" style="clear: left; ">
