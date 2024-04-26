@@ -1,9 +1,10 @@
 from my_heap import HeapWithJobs
 from tqdm import tqdm
+from copy import copy
 from scheduler_generic import Scheduler
 from job_class import JobBucket
 from my_heap import PredictionHeap
-from oracles import LambdaUpdaterNaive
+from lambda_updaters import LambdaUpdaterVersus
 
 class PRR_scheduler(Scheduler):
     def __init__(self, lambda_parameter, oracle):
@@ -244,7 +245,6 @@ class DPRR_scheduler(Scheduler):
 
 class DPRR_dlambda_scheduler(Scheduler):
     def __init__(self, oracle):
-        self.hyperLambda = 0.5
         super().__init__()
         self.oracle = oracle
 
@@ -255,10 +255,13 @@ class DPRR_dlambda_scheduler(Scheduler):
         pred_classes = self.oracle.computePredictionClasses(self.queue)
         pred_heap = PredictionHeap(pred_classes)
         job_bucket = JobBucket(self.queue)
-        self.lambda_updater = LambdaUpdaterNaive()
+        lambda_updater = LambdaUpdaterVersus()
+        lmbd_idx = 0
+        lmbd_thresh = 2
         
         round_robin_processed_time = 0
         completed_count = 0
+        new_lambda = 0.5
 
         for index, job in tqdm(
             enumerate(self.queue),
@@ -272,8 +275,12 @@ class DPRR_dlambda_scheduler(Scheduler):
                 remaining_jobs = max(len(self.queue) - completed_count, 1)
                 pbar.update(1)
 
-                new_lambda = self.lambda_updater.update_lambda()
-                print(new_lambda)
+                if lmbd_idx >= lmbd_thresh:
+                    new_lambda = lambda_updater.update_lambda(new_lambda)
+                    lmbd_thresh = lmbd_thresh ** 2
+                    print(new_lambda)
+
+                lmbd_idx += 1
                 time_for_rr = new_lambda
                 time_for_spjf = 1 - new_lambda
 
@@ -295,7 +302,10 @@ class DPRR_dlambda_scheduler(Scheduler):
 
                     completed_count += 1
 
-                    self.lambda_updater.update_error(job_bucket.exec_job(round_prediction_class.id))
+                    completed_job = job_bucket.exec_job(round_prediction_class.id)
+                    completed_job.prediction = round_prediction_class.prediction
+                    lambda_updater.update_error(copy(completed_job))
+
                     self.oracle.updatePrediction(
                         round_predicted_job, pred_heap, round_prediction_class
                     )
@@ -330,7 +340,10 @@ class DPRR_dlambda_scheduler(Scheduler):
 
                         completed_count += 1
 
-                        self.lambda_updater.update_error(job_bucket.exec_job(round_prediction_class.id))
+                        completed_job = job_bucket.exec_job(round_prediction_class.id)
+                        completed_job.prediction = round_prediction_class.prediction
+                        lambda_updater.update_error(copy(completed_job))
+
                         self.oracle.updatePrediction(
                             round_predicted_job, pred_heap, round_prediction_class
                         )
@@ -349,8 +362,7 @@ class DPRR_dlambda_scheduler(Scheduler):
                             time_for_spjf * rounds_to_complete_smallest,
                         )
 
-                        completed_job = min_job_heap.get_top()
-                        self.lambda_updater.update_error(completed_job)
+                        completed_job = min_job_heap.get_top()                        
 
                         processing_time = (
                             time_for_rr / remaining_jobs
@@ -370,6 +382,11 @@ class DPRR_dlambda_scheduler(Scheduler):
                                 pred_class = c
                         if not pred_class:
                             raise Exception
+
+                        completed_job.prediction = pred_class.prediction
+                        lambda_updater.update_error(copy(completed_job))
+
+
                         self.oracle.updatePrediction(
                             completed_job, pred_heap, pred_class
                         )

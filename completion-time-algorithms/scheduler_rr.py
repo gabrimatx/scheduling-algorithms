@@ -9,7 +9,7 @@ class RR_scheduler(Scheduler):
         processed_time = 0
         ordered_jobs = sorted(self.queue)
         min_index = 0
-        with tqdm(total=len(self.queue), desc="Processing (rr)...") as pbar:
+        with tqdm(total=len(self.queue), desc="Processing (rr)...", disable=True) as pbar:
             while min_index < len(ordered_jobs):
                 time_to_pass = (
                     ordered_jobs[min_index].remaining_duration - processed_time

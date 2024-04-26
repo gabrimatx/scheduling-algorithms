@@ -19,7 +19,7 @@ class SPJF_scheduler(Scheduler):
 
     def run(self):
         self.queue.sort(key=lambda j: self.sort_jobs(j))
-        for i in tqdm(range(len(self.queue)), "Processing (spjf)..."):
+        for i in tqdm(range(len(self.queue)), "Processing (spjf)...", disable=True):
             job = self.queue[i]
             self.current_time += job.remaining_duration
             self.total_completion_time += self.current_time
