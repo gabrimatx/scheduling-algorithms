@@ -1,7 +1,9 @@
 import numpy as np
 from job_class import Job, PredictionClass
 import numpy as np
-
+from collections import defaultdict
+from random import choice
+from itertools import chain
 class PerfectOracle:
     def __init__(self):
         pass
@@ -67,6 +69,40 @@ class DynamicJobMeanOracle(JobMeanOracle):
         P_heap.update_prediction(P_class, self.jobTotals[job.id] / self.jobOccurrences[job.id])
         self.totalMean += job.real_duration
         self.totalJobOccurrences += 1
+
+class LotteryOracle:
+    def __init__(self, rounds) -> None:
+        self.completed_jobs = defaultdict(list)
+        self.rounds = rounds
+        self.jobTotal = 0
+        self.jobNum = 0
+
+    def updatePrediction(self, job):
+        self.completed_jobs[job.id].append(job)
+        self.jobTotal += job.real_duration
+        self.jobNum += 1
+
+    def computePredictions(self, JobSet: list) -> None:
+        for job in JobSet:
+            self.completed_jobs[job.id].append(job)
+        self.jobTotal = sum(x.real_duration for x in chain.from_iterable(self.completed_jobs.values()))
+        self.jobNum = sum(len(x) for x in self.completed_jobs.values())
+
+    def pick_next(self, classes):
+        # Returns the selected class
+        if self.jobNum == 0:
+            return choice(list(classes))
+        scores = defaultdict(int)
+        for _ in range(self.rounds):
+            candidates = []
+            for job_class in classes:
+                if self.completed_jobs[job_class]:
+                    candidates.append(choice(self.completed_jobs[job_class]))
+                else:
+                    candidates.append(Job(job_class, 0, self.jobTotal / self.jobNum))
+            smallest_job = min(candidates, key = lambda x: x.real_duration)
+            scores[smallest_job.id] += 1
+        return max(scores.keys(), key = lambda class_id: scores[class_id])
 
 class JobMedianOracle:
     def __init__(self):

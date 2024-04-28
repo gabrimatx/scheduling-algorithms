@@ -32,7 +32,7 @@ class PredictionClass:
 class JobBucket:
     def __init__(self, JobSet: list) -> None:
         self.buckets = {}
-        for job in JobSet:
+        for job in JobSet[::-1]:
             if job.id in self.buckets:
                 self.buckets[job.id].append(job)
             else:
@@ -41,6 +41,9 @@ class JobBucket:
     def exec_job(self, bucket_id: int) -> Job:
         completed_job = self.buckets[bucket_id].pop()
         return completed_job
+    
+    def get_classes(self):
+        return set([key for key in self.buckets.keys() if self.buckets[key]])
     
     def pop_job(self, job):
         for ind, j in enumerate(self.buckets[job.id]):

@@ -2,8 +2,9 @@ from scheduler_generic import Scheduler
 from tqdm import tqdm
 from job_class import JobBucket
 from my_heap import PredictionHeap
-
-
+from copy import deepcopy
+from oracles import LotteryOracle
+import random 
 class SJF_scheduler(Scheduler):
     def run(self):
         self.queue = sorted(self.queue)
@@ -40,5 +41,32 @@ class DSPJF_scheduler(Scheduler):
             self.oracle.updatePrediction(completed_job, pred_heap, prediction_class)
             if job_bucket.is_empty(prediction_class.id):
                 pred_heap.empty_prediction_class(prediction_class)
+            self.current_time += completed_job.remaining_duration
+            self.total_completion_time += self.current_time
+
+class LotteryScheduler(Scheduler):
+    def __init__(self, oracle):
+        super().__init__()
+        self.oracle = oracle
+    
+    def run(self):
+        true_queue = deepcopy(self.queue)
+        random.seed(22)
+        for i in tqdm(range(10), desc= "Running lottery scheduler 10 times..."):
+            self.current_time = 0
+            self.queue = deepcopy(true_queue)
+            self.random_run()
+        self.total_completion_time /= 10
+    
+    def random_run(self):
+        job_bucket = JobBucket(self.queue)
+        next_id = self.oracle.pick_next(job_bucket.get_classes())
+        for i in range(len(self.queue)):
+            if job_bucket.is_empty(next_id):
+                # Run lottery
+                next_id = self.oracle.pick_next(job_bucket.get_classes())
+            
+            completed_job = job_bucket.exec_job(next_id)
+            self.oracle.updatePrediction(completed_job)
             self.current_time += completed_job.remaining_duration
             self.total_completion_time += self.current_time

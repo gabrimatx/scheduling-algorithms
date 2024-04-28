@@ -7,7 +7,7 @@ from tqdm import tqdm
 from copy import deepcopy
 from scheduler_sjf import SJF_scheduler
 from collections import defaultdict
-
+from oracles import LotteryOracle
 class DataLoader:
     def __init__(self, filename: str, training_size: int, test_size: int, normalizer: int) -> None:
         self.filename = filename
@@ -61,6 +61,8 @@ class Experiment:
             dynamic_scheduler.total_completion_time = 0
             dynamic_scheduler.current_time = 0
             dyn_oracle = self.dynamic_oracle()
+            if dynamic_scheduler.__class__.__name__ == 'LotteryScheduler':
+                dyn_oracle = LotteryOracle(20)
             if training_slice:
                 dyn_oracle.computePredictions(training_slice)
             dynamic_scheduler.oracle = dyn_oracle
