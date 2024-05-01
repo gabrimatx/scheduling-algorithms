@@ -52,7 +52,10 @@ class Experiment:
             static_scheduler.queue = []
             static_scheduler.total_completion_time = 0
             static_scheduler.current_time = 0
-            static_scheduler.oracle = s_oracle
+            if not static_scheduler.oracle:
+                static_scheduler.oracle = s_oracle
+            else:
+                static_scheduler.oracle.computePredictions(training_slice)
             static_scheduler.add_job_set(deepcopy(test_set))
         
         # Add dynamic oracles:
@@ -60,24 +63,22 @@ class Experiment:
             dynamic_scheduler.queue = []
             dynamic_scheduler.total_completion_time = 0
             dynamic_scheduler.current_time = 0
-            dyn_oracle = self.dynamic_oracle()
-            if dynamic_scheduler.__class__.__name__ == 'LotteryScheduler':
-                dyn_oracle = LotteryOracle(20)
+            if not dynamic_scheduler.oracle:
+                dynamic_scheduler.oracle = self.dynamic_oracle()
             if training_slice:
-                dyn_oracle.computePredictions(training_slice)
-            dynamic_scheduler.oracle = dyn_oracle
+                dynamic_scheduler.oracle.computePredictions(training_slice)
             dynamic_scheduler.add_job_set(deepcopy(test_set))
     
     def run_experiment(self, result_dict, sjf):
         for static_scheduler in self.static_schedulers:
             static_scheduler.run()
             keyname = static_scheduler.name
-            result_dict[keyname].append(static_scheduler.total_completion_time / sjf)
+            result_dict[keyname].append([static_scheduler.total_completion_time / sjf, np.std([res/sjf for res in static_scheduler.std])])
 
         for dynamic_scheduler in self.dynamic_schedulers:
             dynamic_scheduler.run()
             keyname = dynamic_scheduler.name
-            result_dict[keyname].append(dynamic_scheduler.total_completion_time / sjf)
+            result_dict[keyname].append([dynamic_scheduler.total_completion_time / sjf, np.std([res/sjf for res in dynamic_scheduler.std])])
 
         
 
@@ -98,24 +99,51 @@ class Tester:
 
     def run_test(self):
         for slice in self.slices:
-            print("Running test #", slice)
+            print("Running test #", slice, "=" * 150)
             self.experiment.setup_schedulers(self.data_loader.training_set, slice, self.data_loader.test_set)
             self.experiment.run_experiment(self.results, self.sjf_tct)
 
     def make_plot(self, filename = "plot.pdf", dataset_name = ""):
-        df = pd.DataFrame(self.results)
+        def pick_style(sched_name):
+            name = sched_name.split()[0]
+            switcher = {
+                "RR": ('-', "blue"),
+                "SPJF": ('--', "red"),
+                "PRR": ('--', "green"),
+                "dSPJF": ('-.', "tomato"),
+                "dPRR": ('-.', "limegreen"),
+                "dLambda": ('-.', "teal"),
+                "Lottery": ('-.', "gold"),
+                "NCS": ('--', "dimgray"),
+            }
+            return switcher.get(name, ("-", "black"))
+
+        # Extract mean values and standard deviations for each scheduler
+        mean_data = {key: [x[0] for x in values] for key, values in self.results.items()}
+        std_data = {key: [x[1] for x in values] for key, values in self.results.items()}
+
+        sns.set_theme(context="paper")
+        sns.set_style("whitegrid")
+        sns.set_palette("husl")
+
         plt.figure(figsize=(15, 9))
-        x_ind = 1
-        for col in df.columns:
-            plt.plot(df.index, df[col], marker='', label=col)
-            # Annotate the lines
-            plt.text(df.index[x_ind] + 0.2, df[col][x_ind] + 0.02, col, fontsize=10, ha='left', va='center')
-            x_ind = (x_ind + 1) % 10
-        plt.xticks(range(11), range(11))  
+
+        # Plot the lines using Seaborn's lineplot with error bars for standard deviation
+        for scheduler, mean_values in mean_data.items():
+            sns.lineplot(x=range(len(mean_values)), y=mean_values, label=scheduler, color = pick_style(scheduler)[1], linestyle = pick_style(scheduler)[0])
+
+            # Add shaded area representing standard deviation
+            plt.fill_between(range(len(mean_values)), [mean_values[i] - std_data[scheduler][i] for i in range(len(mean_values))],
+                            [mean_values[i] + std_data[scheduler][i] for i in range(len(mean_values))], alpha=0.1, color = pick_style(scheduler)[1])
+
+        plt.legend(loc = "upper center", bbox_to_anchor=(0.5, 1.1), shadow=True, ncol=len(self.results))
+
+        plt.grid(False)
+
+        plt.xticks(range(len(self.slices)), range(len(self.slices)))  
         plt.xlabel('Training set slices')
         plt.ylabel('Competitive ratio')
         plt.title(f'Scheduling on {dataset_name}, sizes: Test = {self.data_loader.test_size} | Train = {self.data_loader.training_size}')
-        plt.grid(visible=True)
         plt.savefig(filename)
 
 

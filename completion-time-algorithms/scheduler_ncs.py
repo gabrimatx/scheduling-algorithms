@@ -5,6 +5,7 @@ from random import choices
 from collections import defaultdict
 from tqdm import tqdm
 from copy import deepcopy
+import numpy as np
 
 class NCS_scheduler(Scheduler):
     def __init__(self, oracle, epsilon):
@@ -107,54 +108,49 @@ class NCS_scheduler(Scheduler):
     def run(self):
         true_jobs = deepcopy(self.jobs)
         true_queue = deepcopy(self.queue)
-        for i in range(10):
-            print(f"Running NCS randomly #{i}")
+        results = []
+        for i in tqdm(range(10), desc="NCS Processing"):
             self.current_time = 0
+            self.total_completion_time = 0
             self.jobs = deepcopy(true_jobs)
             self.queue = deepcopy(true_queue)
             self.random_run()
-        self.total_completion_time /= 10
+            results.append(self.total_completion_time)
+        self.total_completion_time = np.mean(results)
+        self.std = results
 
     def random_run(self):
         round = 1
         n = len(self.queue)
         self.queue.sort(key=lambda x: self.sort_jobs(x))
         delta = 1 / 50
-        pbar = tqdm(total=len(self.queue), desc="Processing NCS", unit="job")
-        prev_len = len(self.queue)
         while len(self.queue) >= log2(n) / self.epsilon**3:
             median_k = self.median_estimator(delta, n)
             error_k = self.error_estimator(n, median_k)
-            pbar.update(prev_len - len(self.queue))
             if error_k >= self.epsilon * (delta**2) * median_k * (len(self.queue) ** 2) / 16:
                 # Big error, round robin approach
                 idx = 0
                 while idx < len(self.queue):
                     if self.process_job(self.queue[idx], 2 * median_k):
                         self.queue.pop(idx)
-                        pbar.update(1)
                     else:
                         idx += 1
             else:
                 # Small error, greedy approach
                 idx = 0
-                print("Ciao")
                 self.queue.sort(key=lambda x: self.jobs[x].prediction)
                 while idx < len(self.queue):
                     if self.jobs[self.queue[idx]].prediction <= (1 + self.epsilon) * median_k:
                         if self.process_job(self.queue[idx], self.jobs[self.queue[idx]].prediction + 3 * self.epsilon * median_k):
                             self.queue.pop(idx)
-                            pbar.update(1)
                         else:
                             idx += 1
                     else:
                         break
             round += 1
-            prev_len = len(self.queue)
         # Finish remaining jobs with round robin
         finisher = RR_scheduler()
         finisher.add_job_set(filter(lambda x: x is not None, self.jobs))
         finisher.current_time = self.current_time
         finisher.run()
-        pbar.update(prev_len)
         self.total_completion_time += finisher.total_completion_time

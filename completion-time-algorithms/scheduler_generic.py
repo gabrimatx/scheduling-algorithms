@@ -3,6 +3,8 @@ class Scheduler:
         self.queue = []
         self.total_completion_time = 0
         self.current_time = 0
+        self.oracle = None
+        self.std = [0]
         self.set_name()
 
     def add_job_set(self, jobset):
@@ -23,8 +25,8 @@ class Scheduler:
         return prediction
     
     def set_name(self):
-        self.name = self.__class__.__name__
-        if self.name in ("PRR_scheduler", "DPRR_scheduler"):
-            self.name += " $\lambda$ = " + str(self.hyperLambda)
-        elif self.name in ("NCS_scheduler"):
-            self.name += " $\epsilon$ = " + str(self.epsilon)
+        self.name = self.__class__.__name__.split("_")[0]
+        if self.name in ("PRR", "dPRR"):
+            self.name += " ($\lambda$ = " + str(self.hyperLambda) + ')'
+        elif self.name in ("NCS"):
+            self.name += " ($\epsilon$ = " + str(self.epsilon) + ')'

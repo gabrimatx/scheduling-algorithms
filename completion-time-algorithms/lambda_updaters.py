@@ -2,6 +2,7 @@ from scheduler_rr import RR_scheduler
 from scheduler_sjf import SPJF_scheduler
 from oracles import PredictedOracle
 from copy import deepcopy
+
 class LambdaUpdaterVersus:
     def __init__(self) -> None:
         self.jobset = []
@@ -12,11 +13,13 @@ class LambdaUpdaterVersus:
     def update_lambda(self, lmbda):
         if not self.jobset:
             return 0.5
-        my_rr, my_spjf = RR_scheduler(), SPJF_scheduler(PredictedOracle())
+        my_rr, my_spjf = RR_scheduler(), SPJF_scheduler(PredictedOracle()) # TODO: Why not dSPJF?
         for sched in [my_spjf, my_rr]:
             sched.add_job_set(deepcopy(self.jobset))
             sched.run()
         rr_perf, spjf_perf = my_rr.total_completion_time, my_spjf.total_completion_time
+        if rr_perf == 0 or spjf_perf == 0:
+            return 0.5
         if rr_perf < spjf_perf:
             increase = (spjf_perf - rr_perf) / spjf_perf
             lmbda += (1 - lmbda) * increase

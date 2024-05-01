@@ -24,13 +24,13 @@ class PRR_scheduler(Scheduler):
         for index, job in tqdm(
             enumerate(self.queue),
             total=len(self.queue),
-            desc="Enumerating jobs (prr)...",
+            desc="Enumerating - PRR",
         ):
             job.queue_index = index
 
         with tqdm(
             total=len(self.queue),
-            desc=f"Processing (prr lambda = {self.hyperLambda})...",
+            desc=f"Processing - PRR",
         ) as pbar:
             while len(self.queue) > completed_count:
                 remaining_jobs = max(len(self.queue) - completed_count, 1)
@@ -107,7 +107,7 @@ class PRR_scheduler(Scheduler):
                         )
 
 
-class DPRR_scheduler(Scheduler):
+class dPRR_scheduler(Scheduler):
     def __init__(self, lambda_parameter, oracle):
         self.hyperLambda = lambda_parameter
         super().__init__()
@@ -128,11 +128,11 @@ class DPRR_scheduler(Scheduler):
         for index, job in tqdm(
             enumerate(self.queue),
             total=len(self.queue),
-            desc="Enumerating jobs (dynamic prr)...",
+            desc="Enumerating - dPRR",
         ):
             job.queue_index = index
 
-        with tqdm(total=len(self.queue), desc="Processing (dynamic prr)...") as pbar:
+        with tqdm(total=len(self.queue), desc="Processing - dPRR") as pbar:
             while len(self.queue) > completed_count:
                 remaining_jobs = max(len(self.queue) - completed_count, 1)
                 pbar.update(1)
@@ -243,7 +243,7 @@ class DPRR_scheduler(Scheduler):
                         )
 
 
-class DPRR_dlambda_scheduler(Scheduler):
+class dLambda_scheduler(Scheduler):
     def __init__(self, oracle):
         super().__init__()
         self.oracle = oracle
@@ -266,11 +266,11 @@ class DPRR_dlambda_scheduler(Scheduler):
         for index, job in tqdm(
             enumerate(self.queue),
             total=len(self.queue),
-            desc="Enumerating jobs (dynamic prr lambda)...",
+            desc="Enumerating - dLambda",
         ):
             job.queue_index = index
 
-        with tqdm(total=len(self.queue), desc="Processing (dynamic prr lambda)...") as pbar:
+        with tqdm(total=len(self.queue), desc="Processing - dLambda") as pbar:
             while len(self.queue) > completed_count:
                 remaining_jobs = max(len(self.queue) - completed_count, 1)
                 pbar.update(1)
@@ -278,7 +278,6 @@ class DPRR_dlambda_scheduler(Scheduler):
                 if lmbd_idx >= lmbd_thresh:
                     new_lambda = lambda_updater.update_lambda(new_lambda)
                     lmbd_thresh = lmbd_thresh ** 2
-                    print(new_lambda)
 
                 lmbd_idx += 1
                 time_for_rr = new_lambda
