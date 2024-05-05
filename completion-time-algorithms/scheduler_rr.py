@@ -1,24 +1,28 @@
 from tqdm import tqdm
 from scheduler_generic import Scheduler
 
+
 class RR_scheduler(Scheduler):
     def __init__(self):
         super().__init__()
 
     def run(self):
-        processed_time = 0
+        rr_time = 0
         ordered_jobs = sorted(self.queue)
         min_index = 0
         with tqdm(total=len(self.queue), desc="Processing - RR", disable=True) as pbar:
             while min_index < len(ordered_jobs):
-                time_to_pass = (
-                    ordered_jobs[min_index].remaining_duration - processed_time
-                )
-                processed_time += time_to_pass
-                self.current_time += time_to_pass * (len(ordered_jobs) - min_index)
+                # Compute how much time we are gonna need to complete the next job
+                # (taking into consideration how much the round robin scheduler has already processed it)
+                time_left = ordered_jobs[min_index].remaining_duration - rr_time
+                rr_time += time_left
+
+                # Update objective function and move on to the next job
+                self.current_time += time_left * (len(ordered_jobs) - min_index)
                 self.total_completion_time += self.current_time
                 min_index += 1
                 pbar.update(1)
+
 
 class RR_naive_scheduler(Scheduler):
     def __init__(self):
@@ -33,6 +37,8 @@ class RR_naive_scheduler(Scheduler):
         return round_quantum
 
     def run(self):
+        # Round robin without the relaxing assumption of continuous time
+        # (Used to assert whether computations are correct for low number of jobs)
         ordered_jobs = sorted(self.queue)
         min_index = 0
         round_quantum = self.compute_round_quantum(ordered_jobs, min_index)

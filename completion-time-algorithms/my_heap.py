@@ -81,14 +81,17 @@ class PredictionHeap(Heap):
         super().__init__(prediction_classes)
 
     def update_prediction(self, prediction_class, new_amount):
+        # Update the prediction class 
         prediction_class.prediction = new_amount
         self.heapify(prediction_class.heap_index)
 
     def empty_prediction_class(self, prediction_class: PredictionClass):
+        # Send the class down the heap
         prediction_class.size_j = 0
         self.heapify(prediction_class.heap_index)
 
     def heap_push(self, prediction_class):
+        # Found new class, add it to the prediction heap
         self.container.append(prediction_class)
         prediction_class.heap_index = len(self.container) - 1
         self.heapify_up(len(self.container) - 1)

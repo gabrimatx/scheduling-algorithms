@@ -2,6 +2,7 @@ from scheduler_generic import Scheduler
 from math import log2, ceil
 from scheduler_rr import RR_scheduler
 from random import choices
+from random import seed
 from collections import defaultdict
 from tqdm import tqdm
 from copy import deepcopy
@@ -29,11 +30,13 @@ class NCS_scheduler(Scheduler):
         job = self.jobs[job_idx]
         job.prediction = max(job.prediction - amount, 0)
         if job.remaining_duration <= amount:
+            # If job is completed, update objective function and blank it
             self.current_time += job.remaining_duration
             self.jobs[job_idx] = None
             self.total_completion_time += self.current_time
             return 1
         else:
+            # Else update its duration and time passed
             job.remaining_duration -= amount
             self.current_time += amount
             return 0
@@ -55,19 +58,26 @@ class NCS_scheduler(Scheduler):
         last_job_time = 0
         completed_jobs = set()
         while 2 * finished < sample_size:
+            # Complete first half of the jobs that will finish using round robin
             job = self.jobs[sample[idx]]
             to_process = job.remaining_duration - (rr_per_job * occurrences[sample[idx]])
+
+            # Update round robin processed time and objective function
             rr_per_job += to_process / occurrences[sample[idx]]
             self.current_time += (to_process / occurrences[sample[idx]]) * (sample_size - finished)
             self.total_completion_time += self.current_time
+
+            # Save the job duration and blank it, save it to completed jobs
             last_job_time = job.remaining_duration
             self.jobs[sample[idx]] = None
             finished += occurrences[sample[idx]]
             completed_jobs.add(sample[idx])
             idx += 1
         while idx < len(sample):
+            # Process rest of the jobs for the round robin processed time
             job = self.jobs[sample[idx]]
             job.remaining_duration -= rr_per_job * occurrences[sample[idx]]
+            assert job.remaining_duration >= 0
             job.prediction = max(job.prediction - rr_per_job * occurrences[sample[idx]], 0)
             idx += 1
         
@@ -109,6 +119,8 @@ class NCS_scheduler(Scheduler):
         true_jobs = deepcopy(self.jobs)
         true_queue = deepcopy(self.queue)
         results = []
+        seed(22)
+        # Run the algorithm ten times due to randomness
         for i in tqdm(range(10), desc="NCS Processing"):
             self.current_time = 0
             self.total_completion_time = 0
@@ -179,12 +191,14 @@ class DNCS_scheduler(Scheduler):
         job = self.jobs[job_idx]
         job.prediction = max(job.prediction - amount, 0)
         if job.remaining_duration <= amount:
+            # If job is completed, update objective function and blank it
             self.current_time += job.remaining_duration
             self.oracle.updatePrediction_NH(self.jobs[job_idx]) # Update predictions dynamically
             self.jobs[job_idx] = None
             self.total_completion_time += self.current_time
             return 1
         else:
+            # Else process job for the amount and update time passed
             job.remaining_duration -= amount
             self.current_time += amount
             return 0
@@ -206,20 +220,27 @@ class DNCS_scheduler(Scheduler):
         last_job_time = 0
         completed_jobs = set()
         while 2 * finished < sample_size:
+            # Complete first half of the jobs that will finish using round robin
             job = self.jobs[sample[idx]]
             to_process = job.remaining_duration - (rr_per_job * occurrences[sample[idx]])
+
+            # Update round robin processed time
             rr_per_job += to_process / occurrences[sample[idx]]
             self.current_time += (to_process / occurrences[sample[idx]]) * (sample_size - finished)
             self.total_completion_time += self.current_time
             last_job_time = job.remaining_duration
             self.oracle.updatePrediction_NH(self.jobs[sample[idx]]) # Update predictions dynamically
+
+            # Blank the job and update completed jobs
             self.jobs[sample[idx]] = None
             finished += occurrences[sample[idx]]
             completed_jobs.add(sample[idx])
             idx += 1
         while idx < len(sample):
+            # Process rest of the jobs for the round robin processed time
             job = self.jobs[sample[idx]]
             job.remaining_duration -= rr_per_job * occurrences[sample[idx]]
+            assert job.remaining_duration >= 0
             job.prediction = max(job.prediction - rr_per_job * occurrences[sample[idx]], 0)
             idx += 1
         
@@ -262,6 +283,8 @@ class DNCS_scheduler(Scheduler):
         true_queue = deepcopy(self.queue)
         initial_oracle = deepcopy(self.oracle)
         results = []
+        seed(22)
+        # Run the algorithm ten times due to randomness
         for i in tqdm(range(10), desc="DNCS Processing"):
             self.current_time = 0
             self.total_completion_time = 0
@@ -280,12 +303,12 @@ class DNCS_scheduler(Scheduler):
         while len(self.queue) >= log2(n) / self.epsilon**3:
             median_k = self.median_estimator(delta, n)
 
-            # Sort jobs each round as predictions update
+            # Sort jobs each round to update predictions for error estimator
             self.queue.sort(key=lambda x: self.sort_jobs(x))
 
             error_k = self.error_estimator(n, median_k)
 
-            # Sort jobs after estimations
+            # Sort jobs after error estimation
             self.queue.sort(key=lambda x: self.sort_jobs(x))
 
             if error_k >= self.epsilon * (delta**2) * median_k * (len(self.queue) ** 2) / 16:
@@ -303,8 +326,8 @@ class DNCS_scheduler(Scheduler):
                     if self.jobs[self.queue[idx]].prediction <= (1 + self.epsilon) * median_k:
                         if self.process_job(self.queue[idx], self.jobs[self.queue[idx]].prediction + 3 * self.epsilon * median_k):
                             self.queue.pop(idx)
+                            # Sort job after the predictions have been updated again
                             self.queue.sort(key=lambda x: self.sort_jobs(x))
-                            # TODO: consider adding sorting
                         else:
                             idx += 1
                     else:

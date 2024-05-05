@@ -4,7 +4,10 @@ import numpy as np
 from collections import defaultdict
 from random import choice
 from itertools import chain
+
+
 class PerfectOracle:
+    # Returns perfect predictions
     def __init__(self):
         pass
 
@@ -13,19 +16,25 @@ class PerfectOracle:
 
     def getJobPrediction(self, job: Job) -> None:
         return job.real_duration
-    
+
     def updatePrediction_NH(self, job):
         pass
 
+
 class PredictedOracle:
+    # Predictions already istantiated, return them as they are
     def __init__(self) -> None:
         pass
+
     def computePredictions(self, job: Job):
         pass
+
     def getJobPrediction(self, job: Job) -> None:
         return job.prediction
 
+
 class JobMeanOracle:
+    # Return mean of the class belonging to the job, or total mean if unseen class
     def __init__(self):
         self.jobTotals = {}
         self.jobOccurrences = {}
@@ -37,7 +46,6 @@ class JobMeanOracle:
         self.jobOccurrences = {}
         self.totalJobOccurrences = 0
         self.totalMean = 0
-
 
     def getJobPrediction(self, job: Job) -> float:
         return self.jobTotals.get(job.id, self.totalMean) / max(
@@ -55,11 +63,13 @@ class JobMeanOracle:
 
             self.totalMean += job.real_duration
             self.totalJobOccurrences += 1
-        
+
+
 class DynamicJobMeanOracle(JobMeanOracle):
+    # Training set get updated dynamically and can compute prediction classes
     def __init__(self):
         super().__init__()
-    
+
     def computePredictionClasses(self, JobSet) -> list:
         d = {}
         for job in JobSet:
@@ -68,8 +78,9 @@ class DynamicJobMeanOracle(JobMeanOracle):
             else:
                 d[job.id] = PredictionClass(job.id, 1, self.getJobPrediction(job))
         return list(d.values())
-    
+
     def updatePrediction_NH(self, job):
+        # Update training set without updating heap of prediction classes
         if job.id in self.jobTotals:
             self.jobTotals[job.id] += job.real_duration
             self.jobOccurrences[job.id] += 1
@@ -86,11 +97,15 @@ class DynamicJobMeanOracle(JobMeanOracle):
         else:
             self.jobTotals[job.id] = job.real_duration
             self.jobOccurrences[job.id] = 1
-        P_heap.update_prediction(P_class, self.jobTotals[job.id] / self.jobOccurrences[job.id])
+        P_heap.update_prediction(
+            P_class, self.jobTotals[job.id] / self.jobOccurrences[job.id]
+        )
         self.totalMean += job.real_duration
         self.totalJobOccurrences += 1
 
+
 class LotteryOracle:
+    # Picks a winner between classes as the next one to schedule
     def __init__(self, rounds) -> None:
         self.completed_jobs = defaultdict(list)
         self.rounds = rounds
@@ -105,12 +120,15 @@ class LotteryOracle:
     def computePredictions(self, JobSet: list) -> None:
         for job in JobSet:
             self.completed_jobs[job.id].append(job)
-        self.jobTotal = sum(x.real_duration for x in chain.from_iterable(self.completed_jobs.values()))
+        self.jobTotal = sum(
+            x.real_duration for x in chain.from_iterable(self.completed_jobs.values())
+        )
         self.jobNum = sum(len(x) for x in self.completed_jobs.values())
 
     def pick_next(self, classes):
         # Returns the selected class
         if self.jobNum == 0:
+            # Doesn't know any job, pick at random
             return choice(list(classes))
         scores = defaultdict(int)
         for _ in range(self.rounds):
@@ -119,19 +137,25 @@ class LotteryOracle:
                 if self.completed_jobs[job_class]:
                     candidates.append(choice(self.completed_jobs[job_class]))
                 else:
+                    # We don't know about the class, consider it as a generic job
                     candidates.append(Job(job_class, 0, self.jobTotal / self.jobNum))
-            smallest_job = min(candidates, key = lambda x: x.real_duration)
+            # Pick a winner for the round, and increase its score
+            smallest_job = min(candidates, key=lambda x: x.real_duration)
             scores[smallest_job.id] += 1
-        return max(scores.keys(), key = lambda class_id: scores[class_id])
+        # Return class with most wins
+        return max(scores.keys(), key=lambda class_id: scores[class_id])
+
 
 class JobMedianOracle:
+    # Same as mean, but uses the median
+
     def __init__(self):
         self.jobMedians = {}
         self.totalMedian = 0
 
     def getJobPrediction(self, job: Job) -> float:
         return self.jobMedians.get(job.id, self.totalMedian)
-    
+
     def median(self, lst):
         sorted_lst = sorted(lst)
         n = len(sorted_lst)
@@ -151,12 +175,14 @@ class JobMedianOracle:
                 occurrences_per_id[job.id] = [job.real_duration]
 
             total_occurrences.append(job.real_duration)
-            
-        for k,v in occurrences_per_id.items():
+
+        for k, v in occurrences_per_id.items():
             self.jobMedians[k] = self.median(v)
         self.totalMedian = self.median(total_occurrences)
-                
+
+
 class GaussianPerturbationOracle:
+    # Perturbs the job durations using errors sampled from a gaussian distribution
     def __init__(self, mean, std_dev):
         self.mean = mean
         self.std_dev = std_dev
@@ -166,9 +192,3 @@ class GaussianPerturbationOracle:
 
     def getJobPrediction(self, Job):
         return Job.real_duration + np.random.normal(self.mean, self.std_dev, 1)[0]
-
-if __name__ == "__main__":
-    a = DynamicJobMeanOracle()
-    h = [Job(i % 2, 0, i + 200) for i in range(20)]
-    a.computePredictions(h)
-    print(a.computePredictionClasses())

@@ -70,17 +70,10 @@ class Experiment:
             dynamic_scheduler.add_job_set(deepcopy(test_set))
     
     def run_experiment(self, result_dict, sjf):
-        for static_scheduler in self.static_schedulers:
-            static_scheduler.run()
-            keyname = static_scheduler.name
-            result_dict[keyname].append([static_scheduler.total_completion_time / sjf, np.std([res/sjf for res in static_scheduler.std])])
-
-        for dynamic_scheduler in self.dynamic_schedulers:
-            dynamic_scheduler.run()
-            keyname = dynamic_scheduler.name
-            result_dict[keyname].append([dynamic_scheduler.total_completion_time / sjf, np.std([res/sjf for res in dynamic_scheduler.std])])
-
-        
+        for scheduler in self.static_schedulers + self.dynamic_schedulers:
+            scheduler.run()
+            keyname = scheduler.name
+            result_dict[keyname].append([scheduler.total_completion_time / sjf, np.std([res/sjf for res in scheduler.std])])
 
 class Tester:
     def __init__(self, data_loader: DataLoader, experiment: Experiment, slices: list) -> None:

@@ -3,18 +3,17 @@ import random
 from scheduler_generic import Scheduler
 
 
+# A scheduler that executes job randomly, and one that executes them in non-incresing order (For evaluation purposes)
+
+
 class RAND_scheduler(Scheduler):
     def __init__(self):
         super().__init__()
         random.seed(22)
 
-    def add_job(self, job):
-        self.queue.append(job)
-
     def run(self):
         random.shuffle(self.queue)
-        for i in tqdm(range(len(self.queue)), "Processing - RAND"):
-            job = self.queue[i]
+        for job in tqdm(self.queue, total=len(self.queue), desc="Processing - RAND"):
             self.current_time += job.remaining_duration
             self.total_completion_time += self.current_time
 
@@ -22,7 +21,6 @@ class RAND_scheduler(Scheduler):
 class LJF_scheduler(Scheduler):
     def run(self):
         self.queue.sort(reverse=True)
-        for i in tqdm(range(len(self.queue)), "Processing - LJF"):
-            job = self.queue[i]
+        for job in tqdm(self.queue, total=len(self.queue), desc="Processing - LJF"):
             self.current_time += job.remaining_duration
             self.total_completion_time += self.current_time
