@@ -13,6 +13,9 @@ class PerfectOracle:
 
     def getJobPrediction(self, job: Job) -> None:
         return job.real_duration
+    
+    def updatePrediction_NH(self, job):
+        pass
 
 class PredictedOracle:
     def __init__(self) -> None:
@@ -28,6 +31,13 @@ class JobMeanOracle:
         self.jobOccurrences = {}
         self.totalJobOccurrences = 0
         self.totalMean = 0
+
+    def reset_data(self):
+        self.jobTotals = {}
+        self.jobOccurrences = {}
+        self.totalJobOccurrences = 0
+        self.totalMean = 0
+
 
     def getJobPrediction(self, job: Job) -> float:
         return self.jobTotals.get(job.id, self.totalMean) / max(
@@ -59,6 +69,16 @@ class DynamicJobMeanOracle(JobMeanOracle):
                 d[job.id] = PredictionClass(job.id, 1, self.getJobPrediction(job))
         return list(d.values())
     
+    def updatePrediction_NH(self, job):
+        if job.id in self.jobTotals:
+            self.jobTotals[job.id] += job.real_duration
+            self.jobOccurrences[job.id] += 1
+        else:
+            self.jobTotals[job.id] = job.real_duration
+            self.jobOccurrences[job.id] = 1
+        self.totalMean += job.real_duration
+        self.totalJobOccurrences += 1
+
     def updatePrediction(self, job, P_heap, P_class):
         if job.id in self.jobTotals:
             self.jobTotals[job.id] += job.real_duration

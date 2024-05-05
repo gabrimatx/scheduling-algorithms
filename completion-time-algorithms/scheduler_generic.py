@@ -28,5 +28,5 @@ class Scheduler:
         self.name = self.__class__.__name__.split("_")[0]
         if self.name in ("PRR", "dPRR"):
             self.name += " ($\lambda$ = " + str(self.hyperLambda) + ')'
-        elif self.name in ("NCS"):
+        elif self.name in ("NCS", "DNCS"):
             self.name += " ($\epsilon$ = " + str(self.epsilon) + ')'
