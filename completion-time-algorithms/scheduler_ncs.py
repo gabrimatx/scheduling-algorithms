@@ -1,5 +1,5 @@
 from scheduler_generic import Scheduler
-from math import log2, ceil
+from math import log2, ceil, log
 from scheduler_rr import RR_scheduler
 from random import choices
 from random import seed
@@ -27,6 +27,7 @@ class NCS_scheduler(Scheduler):
         return prediction
 
     def process_job(self, job_idx: int, amount: float) -> bool:
+        assert amount >= 0
         job = self.jobs[job_idx]
         job.prediction = max(job.prediction - amount, 0)
         if job.remaining_duration <= amount:
@@ -43,7 +44,7 @@ class NCS_scheduler(Scheduler):
     
     def median_estimator(self, delta, n):
         # Sample the indexes of the jobs, and compute their occurrences to perform a weighted round robin
-        sample_size = ceil((log2(2 * n) / (delta**2)))
+        sample_size = ceil((log(2 * n) / (delta**2)))
         sample = choices(self.queue, k=sample_size)
         occurrences = defaultdict(int)
         for idx in sample:
@@ -61,6 +62,8 @@ class NCS_scheduler(Scheduler):
             # Complete first half of the jobs that will finish using round robin
             job = self.jobs[sample[idx]]
             to_process = job.remaining_duration - (rr_per_job * occurrences[sample[idx]])
+            assert to_process > -10 ** (-12)
+            to_process = max(to_process, 0)
 
             # Update round robin processed time and objective function
             rr_per_job += to_process / occurrences[sample[idx]]
@@ -77,7 +80,8 @@ class NCS_scheduler(Scheduler):
             # Process rest of the jobs for the round robin processed time
             job = self.jobs[sample[idx]]
             job.remaining_duration -= rr_per_job * occurrences[sample[idx]]
-            assert job.remaining_duration >= 0
+            assert job.remaining_duration > -10 ** (-12)
+            job.remaining_duration = max(job.remaining_duration, 0)
             job.prediction = max(job.prediction - rr_per_job * occurrences[sample[idx]], 0)
             idx += 1
         
@@ -87,7 +91,7 @@ class NCS_scheduler(Scheduler):
 
     def error_estimator(self, n, median_k):
         # Collect sample from (i, j) family type
-        sample_size = ceil(log2(n) / (self.epsilon**2))
+        sample_size = ceil(log(n) / (self.epsilon**2))
         if not self.queue:
             return 0
         indices = []
@@ -136,7 +140,7 @@ class NCS_scheduler(Scheduler):
         n = len(self.queue)
         self.queue.sort(key=lambda x: self.sort_jobs(x))
         delta = 1 / 50
-        while len(self.queue) >= log2(n) / self.epsilon**3:
+        while len(self.queue) >= log(n) / self.epsilon**3:
             median_k = self.median_estimator(delta, n)
             error_k = self.error_estimator(n, median_k)
             if error_k >= self.epsilon * (delta**2) * median_k * (len(self.queue) ** 2) / 16:
@@ -165,11 +169,12 @@ class NCS_scheduler(Scheduler):
         finisher.add_job_set(filter(lambda x: x is not None, self.jobs))
         finisher.current_time = self.current_time
         finisher.run()
+        assert finisher.total_completion_time >= 0
         self.total_completion_time += finisher.total_completion_time
 
 
 
-class DNCS_scheduler(Scheduler):
+class dNCS_scheduler(Scheduler):
     def __init__(self, oracle, epsilon):
         self.epsilon = epsilon
         super().__init__()
@@ -188,6 +193,7 @@ class DNCS_scheduler(Scheduler):
         return prediction
 
     def process_job(self, job_idx: int, amount: float) -> bool:
+        assert amount >= 0
         job = self.jobs[job_idx]
         job.prediction = max(job.prediction - amount, 0)
         if job.remaining_duration <= amount:
@@ -205,7 +211,7 @@ class DNCS_scheduler(Scheduler):
     
     def median_estimator(self, delta, n):
         # Sample the indexes of the jobs, and compute their occurrences to perform a weighted round robin
-        sample_size = ceil((log2(2 * n) / (delta**2)))
+        sample_size = ceil((log(2 * n) / (delta**2)))
         sample = choices(self.queue, k=sample_size)
         occurrences = defaultdict(int)
         for idx in sample:
@@ -223,6 +229,8 @@ class DNCS_scheduler(Scheduler):
             # Complete first half of the jobs that will finish using round robin
             job = self.jobs[sample[idx]]
             to_process = job.remaining_duration - (rr_per_job * occurrences[sample[idx]])
+            assert to_process > -10 ** (-12)
+            to_process = max(to_process, 0)
 
             # Update round robin processed time
             rr_per_job += to_process / occurrences[sample[idx]]
@@ -240,7 +248,8 @@ class DNCS_scheduler(Scheduler):
             # Process rest of the jobs for the round robin processed time
             job = self.jobs[sample[idx]]
             job.remaining_duration -= rr_per_job * occurrences[sample[idx]]
-            assert job.remaining_duration >= 0
+            assert job.remaining_duration > -10 ** (-12)
+            job.remaining_duration = max(job.remaining_duration, 0)
             job.prediction = max(job.prediction - rr_per_job * occurrences[sample[idx]], 0)
             idx += 1
         
@@ -250,7 +259,7 @@ class DNCS_scheduler(Scheduler):
 
     def error_estimator(self, n, median_k):
         # Collect sample from (i, j) family type
-        sample_size = ceil(log2(n) / (self.epsilon**2))
+        sample_size = ceil(log(n) / (self.epsilon**2))
         if not self.queue:
             return 0
         indices = []
@@ -285,7 +294,7 @@ class DNCS_scheduler(Scheduler):
         results = []
         seed(22)
         # Run the algorithm ten times due to randomness
-        for i in tqdm(range(10), desc="DNCS Processing"):
+        for i in tqdm(range(10), desc="dNCS Processing"):
             self.current_time = 0
             self.total_completion_time = 0
             self.jobs = deepcopy(true_jobs)
@@ -300,7 +309,7 @@ class DNCS_scheduler(Scheduler):
         round = 1
         n = len(self.queue)
         delta = 1 / 50
-        while len(self.queue) >= log2(n) / self.epsilon**3:
+        while len(self.queue) >= log(n) / self.epsilon**3:
             median_k = self.median_estimator(delta, n)
 
             # Sort jobs each round to update predictions for error estimator
@@ -338,4 +347,5 @@ class DNCS_scheduler(Scheduler):
         finisher.add_job_set(filter(lambda x: x is not None, self.jobs))
         finisher.current_time = self.current_time
         finisher.run()
+        assert finisher.total_completion_time >= 0
         self.total_completion_time += finisher.total_completion_time

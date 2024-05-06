@@ -106,7 +106,7 @@ class Tester:
                 "dSPJF": ('-.', "tomato"),
                 "dPRR": ('-.', "limegreen"),
                 "dLambda": ('-.', "teal"),
-                "DNCS": ('-.', "steelblue"),
+                "dNCS": ('-.', "purple"),
                 "Lottery": ('-.', "gold"),
                 "NCS": ('--', "dimgray"),
             }
