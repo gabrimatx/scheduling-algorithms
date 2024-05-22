@@ -120,24 +120,28 @@ class Tester:
         sns.set_style("whitegrid")
         sns.set_palette("husl")
 
-        plt.figure(figsize=(15, 9))
+        fig, ax = plt.subplots(figsize=(8, 6))
 
         # Plot the lines using Seaborn's lineplot with error bars for standard deviation
         for scheduler, mean_values in mean_data.items():
-            sns.lineplot(x=range(len(mean_values)), y=mean_values, label=scheduler, color = pick_style(scheduler)[1], linestyle = pick_style(scheduler)[0])
+            sns.lineplot(x=range(len(mean_values)), y=mean_values, label=scheduler, color = pick_style(scheduler)[1], linestyle = pick_style(scheduler)[0], linewidth = 2)
 
             # Add shaded area representing standard deviation
             plt.fill_between(range(len(mean_values)), [mean_values[i] - std_data[scheduler][i] for i in range(len(mean_values))],
                             [mean_values[i] + std_data[scheduler][i] for i in range(len(mean_values))], alpha=0.1, color = pick_style(scheduler)[1])
 
-        plt.legend(loc = "upper center", bbox_to_anchor=(0.5, 1.1), shadow=True, ncol=len(self.results))
-
+        # plt.legend(loc = "upper center", bbox_to_anchor=(0.5, 1.1), shadow=True, ncol=len(self.results))
+        ax.set_axisbelow(True)  # Set the axis below the borders
+        for spine in ax.spines.values():
+            spine.set_color('black')  # Set the border color to black
+            spine.set_linewidth(2)  
         plt.grid(False)
-
-        plt.xticks(range(len(self.slices)), range(len(self.slices)))  
-        plt.xlabel('Training set slices')
-        plt.ylabel('Competitive ratio')
-        plt.title(f'Scheduling on {dataset_name}, sizes: Test = {self.data_loader.test_size} | Train = {self.data_loader.training_size}')
+        plt.xticks(range(0, len(self.slices),2), range(0, len(self.slices), 2), fontsize = 14)
+        plt.yticks(fontsize = 14) 
+        plt.legend(fontsize = 14)
+        # plt.xlabel('Training set slices')
+        # plt.ylabel('Competitive ratio')
+        # plt.title(f'Scheduling on {dataset_name}, sizes: Test = {self.data_loader.test_size} | Train = {self.data_loader.training_size}')
         plt.savefig(filename)
 
 
