@@ -8,6 +8,7 @@ from copy import deepcopy
 from scheduler_sjf import SJF_scheduler
 from collections import defaultdict
 from oracles import LotteryOracle
+import json
 class DataLoader:
     def __init__(self, filename: str, training_size: int, test_size: int, normalizer: int) -> None:
         self.filename = filename
@@ -83,6 +84,10 @@ class Tester:
         self.sjf_tct = self.compute_sjf_tct()
         self.results = defaultdict(list)
 
+    def dump_results(self, filename = "plot.pdf", dn = ""):
+        with open(filename + ".json", 'w') as fp:
+            json.dump(self.results, fp)
+
     def compute_sjf_tct(self):
         scheduler = SJF_scheduler()
         print(f"Running shortest job first on test set...")
@@ -115,7 +120,9 @@ class Tester:
         # Extract mean values and standard deviations for each scheduler
         mean_data = {key: [x[0] for x in values] for key, values in self.results.items()}
         std_data = {key: [x[1] for x in values] for key, values in self.results.items()}
-
+        plt.rcParams.update({
+            "text.usetex": True,
+        })
         sns.set_theme(context="paper")
         sns.set_style("whitegrid")
         sns.set_palette("husl")
@@ -138,11 +145,13 @@ class Tester:
         plt.grid(False)
         plt.xticks(range(0, len(self.slices),2), range(0, len(self.slices), 2), fontsize = 14)
         plt.yticks(fontsize = 14) 
-        plt.legend(fontsize = 14)
-        # plt.xlabel('Training set slices')
-        # plt.ylabel('Competitive ratio')
+        legend = plt.legend(fontsize = 14)
+        plt.xlabel('Training Set Slices', fontsize = 14)
+        plt.ylabel('Competitive Ratio', fontsize = 14)
         # plt.title(f'Scheduling on {dataset_name}, sizes: Test = {self.data_loader.test_size} | Train = {self.data_loader.training_size}')
-        plt.savefig(filename)
+        plt.savefig(filename + ".svg")
+        legend.remove()
+        plt.savefig(filename + "nlg.svg")
 
 
 
